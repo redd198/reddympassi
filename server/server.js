@@ -1,18 +1,13 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
+import pgPool from './db-postgres.js'
+import mysqlPool from './db.js'
 
 dotenv.config()
 
 // Utiliser PostgreSQL en production, MySQL en local
-let pool
-if (process.env.DATABASE_URL) {
-  const { default: pgPool } = await import('./db-postgres.js')
-  pool = pgPool
-} else {
-  const { default: mysqlPool } = await import('./db.js')
-  pool = mysqlPool
-}
+const pool = process.env.DATABASE_URL ? pgPool : mysqlPool
 
 const app = express()
 const PORT = process.env.PORT || 5000
@@ -119,13 +114,6 @@ app.post('/api/newsletter', async (req, res) => {
     res.status(500).json({ error: 'Erreur serveur' })
   }
 })
-
-// Initialiser les tables PostgreSQL au démarrage (production uniquement)
-if (process.env.DATABASE_URL && process.env.NODE_ENV === 'production') {
-  import('./init-db-postgres.js').catch(err => {
-    console.error('Erreur lors de l\'initialisation de la base:', err.message)
-  })
-}
 
 // Démarrer le serveur
 app.listen(PORT, () => {
