@@ -1,10 +1,18 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
-// Utiliser PostgreSQL en production, MySQL en local
-import pool from process.env.DATABASE_URL ? './db-postgres.js' : './db.js'
 
 dotenv.config()
+
+// Utiliser PostgreSQL en production, MySQL en local
+let pool
+if (process.env.DATABASE_URL) {
+  const { default: pgPool } = await import('./db-postgres.js')
+  pool = pgPool
+} else {
+  const { default: mysqlPool } = await import('./db.js')
+  pool = mysqlPool
+}
 
 const app = express()
 const PORT = process.env.PORT || 5000
