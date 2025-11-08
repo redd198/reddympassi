@@ -112,6 +112,13 @@ app.post('/api/newsletter', async (req, res) => {
   }
 })
 
+// Initialiser les tables PostgreSQL au démarrage (production uniquement)
+if (process.env.DATABASE_URL && process.env.NODE_ENV === 'production') {
+  import('./init-db-postgres.js').catch(err => {
+    console.error('Erreur lors de l\'initialisation de la base:', err.message)
+  })
+}
+
 // Démarrer le serveur
 app.listen(PORT, () => {
   console.log(`🚀 Serveur démarré sur le port ${PORT}`)
