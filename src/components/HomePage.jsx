@@ -155,7 +155,7 @@ const HomePage = () => {
           </a>
           
           <a
-            href="https://wa.me/"
+            href="https://wa.me/242050416661?text=Bonjour%20Reddy,%20je%20souhaite%20en%20savoir%20plus%20sur%20vos%20services"
             target="_blank"
             rel="noopener noreferrer"
             className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-green-600 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300"
@@ -190,7 +190,7 @@ const HomePage = () => {
           </a>
           
           <a
-            href="https://wa.me/"
+            href="https://wa.me/242050416661?text=Bonjour%20Reddy,%20je%20souhaite%20en%20savoir%20plus%20sur%20vos%20services"
             target="_blank"
             rel="noopener noreferrer"
             className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-green-600 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300"

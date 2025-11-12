@@ -32,7 +32,7 @@ const ProjectsPage = () => {
       subtitle: "Cofondateur & Coordinateur",
       logo: "/projects/zieta-logo.png",
       description: "Entreprise que j'ai cofondée, spécialisée dans les solutions digitales africaines. Coordination d'une équipe de développeurs pour la création de ZietaBus, une application innovante de transport intégrant paiements mobiles et modèle freemium adapté au marché local.",
-      link: "https://www.zietabus.com/",
+      link: "https://zietabus.netlify.app/",
       color: "reddy-red"
     },
     {
