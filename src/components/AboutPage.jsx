@@ -62,12 +62,14 @@ const AboutPage = () => {
   ]
 
   const galleryImages = [
-    { src: "/gallery/E-N-EAD.png", alt: "Formation Économie Numérique EAD" },
+    { src: "/gallery/cep.jfif", alt: "Conseil Éthique & Performance" },
+    { src: "/gallery/images.jfif", alt: "Projet digital" },
+    { src: "/gallery/les_etudiants_de_is2m.jpg", alt: "Étudiants de IS2M - Formation" },
     { src: "/gallery/LOGO-creer.jfif", alt: "Logo Créer" },
     { src: "/gallery/LOGO-ZIETAplus.png", alt: "Logo Zieta+" },
     { src: "/gallery/LOGO.jfif", alt: "Logo Projet" },
-    { src: "/gallery/maquette-mike.png", alt: "Maquette site Mike Mvila" },
     { src: "/gallery/maquette-site.jpg", alt: "Maquette site web" },
+    { src: "/gallery/téléchargement.jfif", alt: "Réalisation digitale" },
   ]
 
   return (
