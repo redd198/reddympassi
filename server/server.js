@@ -21,24 +21,10 @@ const PORT = process.env.PORT || 5000
 app.use(cors())
 app.use(express.json())
 
-// Middleware pour tracker les visiteurs
+// Middleware pour tracker les visiteurs - DÉSACTIVÉ TEMPORAIREMENT
+// (ipapi.co a une limite de requêtes)
 app.use(async (req, res, next) => {
-  // Skip tracking pour éviter les erreurs de connexion DB
-  next()
-  
-  // Tracking en arrière-plan (ne bloque pas la requête)
-  try {
-    const ip = getClientIP(req)
-    const location = await getLocationFromIP(ip)
-    
-    await pool.query(
-      `INSERT INTO visitors (ip_address, country, city, page_url, referrer, user_agent) 
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [ip, location.country, location.city, req.originalUrl, req.headers.referer || '', req.headers['user-agent'] || '']
-    )
-  } catch (error) {
-    // Erreur silencieuse pour ne pas bloquer l'app
-  }
+  next() // Passer directement sans tracking
 })
 
 // Middleware d'authentification
