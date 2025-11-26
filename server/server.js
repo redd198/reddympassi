@@ -3,12 +3,11 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-// Importer le bon pool selon l'environnement
+// Importer le pool MySQL
 import mysqlPool from './db.js'
-import postgresPool from './db-postgres.js'
 
-// Utiliser PostgreSQL en production, MySQL en local
-const pool = process.env.NODE_ENV === 'production' ? postgresPool : mysqlPool
+// Utiliser MySQL (compatible avec Railway)
+const pool = mysqlPool
 import { getLocationFromIP, getClientIP } from './tracking.js'
 import { sendLeadNotification, sendReservationNotification, sendCommandeNotification } from './email.js'
 
