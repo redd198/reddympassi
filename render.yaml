@@ -21,6 +21,9 @@ services:
     plan: free
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://reddympassi-api.onrender.com
     headers:
       - path: /*
         name: Cache-Control
