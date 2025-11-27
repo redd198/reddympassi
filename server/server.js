@@ -129,11 +129,14 @@ app.post('/api/commandes', async (req, res) => {
       return res.status(400).json({ error: 'Tous les champs sont requis' })
     }
 
-    const [result] = await pool.query(
+    const { query, params } = adaptQuery(
       `INSERT INTO commandes_livres (nom, email, whatsapp, livre) 
        VALUES (?, ?, ?, ?)`,
       [nom, email, whatsapp, livre]
     )
+    
+    const result = await pool.query(query, params)
+    const insertId = extractInsertId(result)
 
     // Envoyer notification email
     await sendCommandeNotification({ nom, email, whatsapp, livre })
@@ -141,7 +144,7 @@ app.post('/api/commandes', async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Commande enregistrée avec succès',
-      id: result.insertId
+      id: insertId
     })
   } catch (error) {
     console.error('Erreur lors de la création de la commande:', error)
