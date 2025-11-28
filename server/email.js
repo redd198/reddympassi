@@ -102,3 +102,50 @@ export const sendCommandeNotification = async (commande) => {
     console.error('❌ Erreur envoi email:', error)
   }
 }
+
+// Envoyer un email de validation de commande au client
+export const sendValidationEmail = async (commande, message) => {
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: commande.email,
+    subject: `✅ Confirmation de votre commande - ${commande.livre}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #C41E3A 0%, #8B1429 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+          <h1 style="color: white; margin: 0;">✅ Commande Validée</h1>
+        </div>
+        <div style="background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
+          <div style="white-space: pre-wrap; line-height: 1.6; color: #333;">
+${message}
+          </div>
+          <div style="margin-top: 30px; padding: 20px; background: #f9f9f9; border-radius: 8px;">
+            <h3 style="color: #C41E3A; margin-top: 0;">📋 Détails de votre commande</h3>
+            <p><strong>Livre commandé :</strong> ${commande.livre}</p>
+            <p><strong>Nom :</strong> ${commande.nom}</p>
+            <p><strong>Email :</strong> ${commande.email}</p>
+            <p><strong>WhatsApp :</strong> ${commande.whatsapp}</p>
+          </div>
+          <div style="margin-top: 30px; padding: 20px; background: #e8f5e9; border-left: 4px solid #4caf50; border-radius: 4px;">
+            <p style="margin: 0; color: #2e7d32;">
+              <strong>💬 Besoin d'aide ?</strong><br>
+              Contactez-nous sur WhatsApp : ${commande.whatsapp}
+            </p>
+          </div>
+        </div>
+        <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
+          <p>Cet email a été envoyé automatiquement, merci de ne pas y répondre.</p>
+        </div>
+      </div>
+    `,
+    text: message // Version texte brut
+  }
+
+  try {
+    await transporter.sendMail(mailOptions)
+    console.log('✅ Email de validation envoyé au client')
+    return { success: true }
+  } catch (error) {
+    console.error('❌ Erreur envoi email de validation:', error)
+    throw error
+  }
+}

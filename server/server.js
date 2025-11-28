@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken'
 import mysqlPool from './db.js'
 import postgresPool from './db-postgres.js'
 import { getLocationFromIP, getClientIP } from './tracking.js'
-import { sendLeadNotification, sendReservationNotification, sendCommandeNotification } from './email.js'
+import { sendLeadNotification, sendReservationNotification, sendCommandeNotification, sendValidationEmail } from './email.js'
 import { adaptQuery, extractRows, extractInsertId, dbType } from './db-helper.js'
 
 dotenv.config()
@@ -453,18 +453,29 @@ app.post('/api/admin/commandes/:id/valider', authenticateToken, async (req, res)
 
     // Générer le lien selon le canal
     let lien = ''
+    let emailSent = false
+    
     if (canal === 'whatsapp') {
       const whatsappNumber = commande.whatsapp.replace(/[^0-9]/g, '')
       lien = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(messageFinal)}`
     } else if (canal === 'email') {
-      lien = `mailto:${commande.email}?subject=${encodeURIComponent('Confirmation de commande')}&body=${encodeURIComponent(messageFinal)}`
+      // Envoyer l'email automatiquement
+      try {
+        await sendValidationEmail(commande, messageFinal)
+        emailSent = true
+      } catch (emailError) {
+        console.error('Erreur envoi email:', emailError)
+        // En cas d'erreur, générer quand même le lien mailto comme fallback
+        lien = `mailto:${commande.email}?subject=${encodeURIComponent('Confirmation de commande')}&body=${encodeURIComponent(messageFinal)}`
+      }
     }
 
     res.json({
       success: true,
-      message: 'Commande validée',
+      message: emailSent ? 'Commande validée et email envoyé' : 'Commande validée',
       lien,
-      canal
+      canal,
+      emailSent
     })
   } catch (error) {
     console.error('Erreur validation commande:', error)

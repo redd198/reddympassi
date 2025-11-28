@@ -69,8 +69,13 @@ const AdminDashboard = ({ token, onLogout }) => {
       const data = await response.json()
 
       if (data.success) {
-        // Ouvrir le lien dans un nouvel onglet
-        window.open(data.lien, '_blank')
+        // Si c'est un email et qu'il a été envoyé automatiquement
+        if (data.emailSent) {
+          alert('✅ Email envoyé avec succès au client !')
+        } else if (data.lien) {
+          // Ouvrir le lien dans un nouvel onglet (WhatsApp ou fallback email)
+          window.open(data.lien, '_blank')
+        }
         
         // Rafraîchir les données
         fetchData()
@@ -81,7 +86,7 @@ const AdminDashboard = ({ token, onLogout }) => {
       }
     } catch (error) {
       console.error('Erreur validation:', error)
-      alert('Erreur lors de la validation')
+      alert('❌ Erreur lors de la validation')
     }
   }
 
