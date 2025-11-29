@@ -413,6 +413,44 @@ app.get('/api/admin/migrate-commandes', authenticateToken, async (req, res) => {
   }
 })
 
+// Route de test pour vérifier la configuration email
+app.get('/api/admin/test-email', authenticateToken, async (req, res) => {
+  try {
+    const testCommande = {
+      nom: 'Test User',
+      email: process.env.ADMIN_EMAIL || 'reddympassi@gmail.com',
+      whatsapp: '+242050416661',
+      livre: 'Livre de test'
+    }
+    
+    const testMessage = `Bonjour ${testCommande.nom},\n\nCeci est un email de test pour vérifier la configuration.\n\nCordialement,\nL'équipe`
+    
+    await sendValidationEmail(testCommande, testMessage)
+    
+    res.json({ 
+      success: true, 
+      message: 'Email de test envoyé avec succès',
+      sentTo: testCommande.email,
+      config: {
+        EMAIL_USER: process.env.EMAIL_USER ? '✅ Configuré' : '❌ Manquant',
+        EMAIL_PASSWORD: process.env.EMAIL_PASSWORD ? '✅ Configuré' : '❌ Manquant',
+        ADMIN_EMAIL: process.env.ADMIN_EMAIL ? '✅ Configuré' : '❌ Manquant'
+      }
+    })
+  } catch (error) {
+    console.error('❌ Erreur test email:', error)
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      config: {
+        EMAIL_USER: process.env.EMAIL_USER ? '✅ Configuré' : '❌ Manquant',
+        EMAIL_PASSWORD: process.env.EMAIL_PASSWORD ? '✅ Configuré' : '❌ Manquant',
+        ADMIN_EMAIL: process.env.ADMIN_EMAIL ? '✅ Configuré' : '❌ Manquant'
+      }
+    })
+  }
+})
+
 // Route de fix pour supprimer la contrainte CHECK et recréer la colonne statut
 app.get('/api/admin/fix-statut-constraint', authenticateToken, async (req, res) => {
   try {
