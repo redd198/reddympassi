@@ -1,8 +1,11 @@
 import { motion } from 'framer-motion'
 import { FaLinkedin, FaYoutube, FaWhatsapp } from 'react-icons/fa'
 import Navbar from './Navbar'
+import { useVisitorTracking } from '../hooks/useVisitorTracking'
 
 const HomePage = () => {
+  // Tracker les visiteurs
+  useVisitorTracking()
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {

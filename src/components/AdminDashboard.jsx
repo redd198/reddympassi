@@ -41,6 +41,13 @@ const AdminDashboard = ({ token, onLogout }) => {
 
   useEffect(() => {
     fetchData()
+    
+    // Auto-refresh toutes les 30 secondes
+    const interval = setInterval(() => {
+      fetchData()
+    }, 30000) // 30 secondes
+    
+    return () => clearInterval(interval)
   }, [token])
 
   const handleValidateCommande = (commande) => {
