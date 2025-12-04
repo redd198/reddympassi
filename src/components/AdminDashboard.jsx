@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { FaUsers, FaCalendar, FaBook, FaGlobe, FaSignOutAlt, FaChartLine, FaEnvelope, FaWhatsapp } from 'react-icons/fa'
+import { FaUsers, FaCalendar, FaBook, FaGlobe, FaSignOutAlt, FaChartLine, FaWhatsapp, FaTrash } from 'react-icons/fa'
 
 const AdminDashboard = ({ token, onLogout }) => {
   const [stats, setStats] = useState(null)
@@ -103,6 +103,37 @@ const AdminDashboard = ({ token, onLogout }) => {
     } catch (error) {
       console.error('Erreur validation:', error)
       alert('❌ Erreur lors de la validation')
+    }
+  }
+
+  // Fonction de suppression générique
+  const handleDelete = async (type, id, name) => {
+    if (!window.confirm(`Confirmer la suppression ?\n\nCette action est irréversible. Voulez-vous vraiment supprimer cet enregistrement ?\n\n${name || ''}`)) {
+      return
+    }
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/${type}/${id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      )
+
+      const data = await response.json()
+
+      if (data.success) {
+        alert('✅ Suppression effectuée')
+        await fetchData()
+      } else {
+        alert('❌ Erreur lors de la suppression')
+      }
+    } catch (error) {
+      console.error('Erreur suppression:', error)
+      alert('❌ Erreur lors de la suppression')
     }
   }
 
