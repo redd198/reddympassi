@@ -432,6 +432,19 @@ app.get('/api/admin/commandes', authenticateToken, async (req, res) => {
   }
 })
 
+// Récupérer toutes les inscriptions newsletter
+app.get('/api/admin/newsletter', authenticateToken, async (req, res) => {
+  try {
+    const { query, params } = adaptQuery('SELECT * FROM newsletter ORDER BY created_at DESC', [])
+    const result = await pool.query(query, params)
+    const rows = extractRows(result)
+    res.json(rows)
+  } catch (error) {
+    console.error('Erreur:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
 // Ajouter la colonne statut si elle n'existe pas (migration)
 app.get('/api/admin/migrate-commandes', authenticateToken, async (req, res) => {
   try {
@@ -701,6 +714,19 @@ app.delete('/api/admin/leads/:id', authenticateToken, async (req, res) => {
     res.json({ success: true, message: 'Lead supprimé' })
   } catch (error) {
     console.error('Erreur suppression lead:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
+// Supprimer une inscription newsletter
+app.delete('/api/admin/newsletter/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params
+    const { query, params } = adaptQuery('DELETE FROM newsletter WHERE id = ?', [id])
+    await pool.query(query, params)
+    res.json({ success: true, message: 'Inscription newsletter supprimée' })
+  } catch (error) {
+    console.error('Erreur suppression newsletter:', error)
     res.status(500).json({ error: 'Erreur serveur' })
   }
 })
