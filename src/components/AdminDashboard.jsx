@@ -414,33 +414,16 @@ const AdminDashboard = ({ token, onLogout }) => {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Choix du canal */}
+              {/* Canal de communication */}
               <div>
                 <label className="block text-sm font-semibold mb-3">Canal de communication</label>
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => setValidationCanal('whatsapp')}
-                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
-                      validationCanal === 'whatsapp'
-                        ? 'border-green-500 bg-green-50 text-green-700'
-                        : 'border-gray-300 hover:border-gray-400'
-                    }`}
-                  >
-                    <FaWhatsapp className="text-xl" />
-                    WhatsApp
-                  </button>
-                  <button
-                    onClick={() => setValidationCanal('email')}
-                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
-                      validationCanal === 'email'
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-gray-300 hover:border-gray-400'
-                    }`}
-                  >
-                    <FaEnvelope className="text-xl" />
-                    Email
-                  </button>
+                <div className="flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-green-500 bg-green-50 text-green-700">
+                  <FaWhatsapp className="text-xl" />
+                  <span className="font-semibold">WhatsApp uniquement</span>
                 </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  ℹ️ L'envoi par email n'est pas disponible sur Render (SMTP bloqué)
+                </p>
               </div>
 
               {/* Message personnalisé */}
@@ -485,8 +468,8 @@ const AdminDashboard = ({ token, onLogout }) => {
                 onClick={submitValidation}
                 className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
               >
-                {validationCanal === 'whatsapp' ? <FaWhatsapp /> : <FaEnvelope />}
-                Valider et envoyer
+                <FaWhatsapp />
+                Valider et envoyer via WhatsApp
               </button>
             </div>
           </motion.div>
