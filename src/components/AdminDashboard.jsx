@@ -317,16 +317,49 @@ const AdminDashboard = ({ token, onLogout }) => {
 
         {/* Visitors Tab */}
         {activeTab === 'visitors' && (
-          <DataTable
-            title="🌍 Liste des Visiteurs"
-            data={visitors}
-            columns={[
-              { key: 'country', label: 'Pays' },
-              { key: 'city', label: 'Ville' },
-              { key: 'page_url', label: 'Page' },
-              { key: 'created_at', label: 'Date', format: (val) => new Date(val).toLocaleString('fr-FR') }
-            ]}
-          />
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div className="p-6 border-b">
+              <h2 className="text-2xl font-bold">🌍 Liste des Visiteurs</h2>
+              <p className="text-gray-600">{visitors.length} entrée(s)</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jour</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mois</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Année</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Heure</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Page</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {visitors.map((visitor) => {
+                    const date = new Date(visitor.created_at)
+                    const mois = date.toLocaleDateString('fr-FR', { month: 'long' })
+                    return (
+                      <tr key={visitor.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{date.getDate().toString().padStart(2, '0')}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">{mois}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{date.getFullYear()}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{date.toLocaleTimeString('fr-FR')}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{visitor.page_url}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <button
+                            onClick={() => handleDelete('visitors', visitor.id, `Visite du ${date.toLocaleDateString('fr-FR')}`)}
+                            className="text-red-600 hover:text-red-800 flex items-center gap-1"
+                          >
+                            <FaTrash /> Supprimer
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
       </div>
 
