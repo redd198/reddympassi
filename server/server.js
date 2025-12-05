@@ -239,18 +239,20 @@ app.post('/api/leads', async (req, res) => {
   }
 })
 
-// Route pour l'inscription à la newsletter
+// Route pour l'inscription à la newsletter (Email ou WhatsApp)
 app.post('/api/newsletter', async (req, res) => {
   try {
-    const { email } = req.body
+    const { email, whatsapp, type } = req.body // type: 'email' ou 'whatsapp' ou 'emploi'
 
-    if (!email) {
-      return res.status(400).json({ error: 'Email requis' })
+    if (!email && !whatsapp) {
+      return res.status(400).json({ error: 'Email ou WhatsApp requis' })
     }
 
+    const subscriptionType = type || 'email'
+
     const { query, params } = adaptQuery(
-      'INSERT INTO newsletter (email) VALUES (?)',
-      [email]
+      'INSERT INTO newsletter (email, whatsapp, type) VALUES (?, ?, ?)',
+      [email || null, whatsapp || null, subscriptionType]
     )
     
     await pool.query(query, params)
@@ -262,9 +264,43 @@ app.post('/api/newsletter', async (req, res) => {
   } catch (error) {
     // PostgreSQL utilise '23505' pour duplicate key, MySQL utilise 'ER_DUP_ENTRY'
     if (error.code === 'ER_DUP_ENTRY' || error.code === '23505') {
-      return res.status(400).json({ error: 'Cet email est déjà inscrit' })
+      return res.status(400).json({ error: 'Vous êtes déjà inscrit' })
     }
     console.error('Erreur lors de l\'inscription:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
+// ============= ROUTES BLOG & OPPORTUNITÉS =============
+
+// Récupérer tous les articles de blog (public)
+app.get('/api/blog/articles', async (req, res) => {
+  try {
+    const { query, params } = adaptQuery(
+      'SELECT * FROM blog_articles WHERE published = ? ORDER BY created_at DESC',
+      [true]
+    )
+    const result = await pool.query(query, params)
+    const rows = extractRows(result)
+    res.json(rows)
+  } catch (error) {
+    console.error('Erreur:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
+// Récupérer toutes les opportunités d'emploi (public)
+app.get('/api/emploi/opportunites', async (req, res) => {
+  try {
+    const { query, params } = adaptQuery(
+      'SELECT * FROM opportunites_emploi WHERE published = ? ORDER BY created_at DESC',
+      [true]
+    )
+    const result = await pool.query(query, params)
+    const rows = extractRows(result)
+    res.json(rows)
+  } catch (error) {
+    console.error('Erreur:', error)
     res.status(500).json({ error: 'Erreur serveur' })
   }
 })
@@ -441,6 +477,136 @@ app.get('/api/admin/newsletter', authenticateToken, async (req, res) => {
     res.json(rows)
   } catch (error) {
     console.error('Erreur:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
+// ============= ROUTES ADMIN BLOG =============
+
+// Récupérer tous les articles (admin)
+app.get('/api/admin/blog/articles', authenticateToken, async (req, res) => {
+  try {
+    const { query, params} = adaptQuery('SELECT * FROM blog_articles ORDER BY created_at DESC', [])
+    const result = await pool.query(query, params)
+    const rows = extractRows(result)
+    res.json(rows)
+  } catch (error) {
+    console.error('Erreur:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
+// Créer un article
+app.post('/api/admin/blog/articles', authenticateToken, async (req, res) => {
+  try {
+    const { title, excerpt, content, category, image, readTime, published } = req.body
+    
+    const { query, params } = adaptQuery(
+      'INSERT INTO blog_articles (title, excerpt, content, category, image, read_time, published) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [title, excerpt, content, category, image || null, readTime || '5 min', published || false]
+    )
+    
+    await pool.query(query, params)
+    res.status(201).json({ success: true, message: 'Article créé' })
+  } catch (error) {
+    console.error('Erreur création article:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
+// Modifier un article
+app.put('/api/admin/blog/articles/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params
+    const { title, excerpt, content, category, image, readTime, published } = req.body
+    
+    const { query, params } = adaptQuery(
+      'UPDATE blog_articles SET title = ?, excerpt = ?, content = ?, category = ?, image = ?, read_time = ?, published = ? WHERE id = ?',
+      [title, excerpt, content, category, image, readTime, published, id]
+    )
+    
+    await pool.query(query, params)
+    res.json({ success: true, message: 'Article modifié' })
+  } catch (error) {
+    console.error('Erreur modification article:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
+// Supprimer un article
+app.delete('/api/admin/blog/articles/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params
+    const { query, params } = adaptQuery('DELETE FROM blog_articles WHERE id = ?', [id])
+    await pool.query(query, params)
+    res.json({ success: true, message: 'Article supprimé' })
+  } catch (error) {
+    console.error('Erreur suppression article:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
+// ============= ROUTES ADMIN OPPORTUNITÉS EMPLOI =============
+
+// Récupérer toutes les opportunités (admin)
+app.get('/api/admin/emploi/opportunites', authenticateToken, async (req, res) => {
+  try {
+    const { query, params } = adaptQuery('SELECT * FROM opportunites_emploi ORDER BY created_at DESC', [])
+    const result = await pool.query(query, params)
+    const rows = extractRows(result)
+    res.json(rows)
+  } catch (error) {
+    console.error('Erreur:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
+// Créer une opportunité
+app.post('/api/admin/emploi/opportunites', authenticateToken, async (req, res) => {
+  try {
+    const { title, company, location, type, description, requirements, salary, link, published } = req.body
+    
+    const { query, params } = adaptQuery(
+      'INSERT INTO opportunites_emploi (title, company, location, type, description, requirements, salary, link, published) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [title, company, location, type, description, requirements || null, salary || null, link || null, published || false]
+    )
+    
+    await pool.query(query, params)
+    res.status(201).json({ success: true, message: 'Opportunité créée' })
+  } catch (error) {
+    console.error('Erreur création opportunité:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
+// Modifier une opportunité
+app.put('/api/admin/emploi/opportunites/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params
+    const { title, company, location, type, description, requirements, salary, link, published } = req.body
+    
+    const { query, params } = adaptQuery(
+      'UPDATE opportunites_emploi SET title = ?, company = ?, location = ?, type = ?, description = ?, requirements = ?, salary = ?, link = ?, published = ? WHERE id = ?',
+      [title, company, location, type, description, requirements, salary, link, published, id]
+    )
+    
+    await pool.query(query, params)
+    res.json({ success: true, message: 'Opportunité modifiée' })
+  } catch (error) {
+    console.error('Erreur modification opportunité:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
+// Supprimer une opportunité
+app.delete('/api/admin/emploi/opportunites/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params
+    const { query, params } = adaptQuery('DELETE FROM opportunites_emploi WHERE id = ?', [id])
+    await pool.query(query, params)
+    res.json({ success: true, message: 'Opportunité supprimée' })
+  } catch (error) {
+    console.error('Erreur suppression opportunité:', error)
     res.status(500).json({ error: 'Erreur serveur' })
   }
 })

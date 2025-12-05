@@ -11,7 +11,7 @@ const BlogPage = () => {
     e.preventDefault()
     
     try {
-      const response = await fetch('http://localhost:5000/api/newsletter', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/newsletter`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
