@@ -662,6 +662,118 @@ app.get('/api/admin/migrate-reservations', authenticateToken, async (req, res) =
   }
 })
 
+// Migration complète pour Blog + Opportunités IT
+app.get('/api/admin/migrate-blog-complete', authenticateToken, async (req, res) => {
+  try {
+    const isPostgres = process.env.DATABASE_URL?.startsWith('postgresql://')
+    
+    const results = []
+    
+    // 1. Modifier newsletter pour ajouter whatsapp et type
+    try {
+      if (isPostgres) {
+        await pool.query(`ALTER TABLE newsletter ADD COLUMN IF NOT EXISTS whatsapp VARCHAR(20)`)
+        await pool.query(`ALTER TABLE newsletter ADD COLUMN IF NOT EXISTS type VARCHAR(20) DEFAULT 'email'`)
+      } else {
+        await pool.query(`ALTER TABLE newsletter ADD COLUMN whatsapp VARCHAR(20)`)
+        await pool.query(`ALTER TABLE newsletter ADD COLUMN type VARCHAR(20) DEFAULT 'email'`)
+      }
+      results.push('✅ Newsletter modifiée')
+    } catch (e) {
+      results.push('ℹ️ Newsletter déjà à jour')
+    }
+    
+    // 2. Créer table blog_articles
+    try {
+      if (isPostgres) {
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS blog_articles (
+            id SERIAL PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            excerpt TEXT,
+            content TEXT NOT NULL,
+            category VARCHAR(50),
+            image VARCHAR(255),
+            read_time VARCHAR(20) DEFAULT '5 min',
+            published BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )
+        `)
+      } else {
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS blog_articles (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            excerpt TEXT,
+            content TEXT NOT NULL,
+            category VARCHAR(50),
+            image VARCHAR(255),
+            read_time VARCHAR(20) DEFAULT '5 min',
+            published BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+          )
+        `)
+      }
+      results.push('✅ Table blog_articles créée')
+    } catch (e) {
+      results.push('ℹ️ Table blog_articles existe déjà')
+    }
+    
+    // 3. Créer table opportunites_emploi
+    try {
+      if (isPostgres) {
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS opportunites_emploi (
+            id SERIAL PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            company VARCHAR(255) NOT NULL,
+            location VARCHAR(255),
+            type VARCHAR(50),
+            description TEXT NOT NULL,
+            requirements TEXT,
+            salary VARCHAR(100),
+            link VARCHAR(500),
+            published BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )
+        `)
+      } else {
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS opportunites_emploi (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            company VARCHAR(255) NOT NULL,
+            location VARCHAR(255),
+            type VARCHAR(50),
+            description TEXT NOT NULL,
+            requirements TEXT,
+            salary VARCHAR(100),
+            link VARCHAR(500),
+            published BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+          )
+        `)
+      }
+      results.push('✅ Table opportunites_emploi créée')
+    } catch (e) {
+      results.push('ℹ️ Table opportunites_emploi existe déjà')
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Migration blog complète effectuée',
+      details: results
+    })
+  } catch (error) {
+    console.error('Erreur migration blog:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
 // Route de test pour vérifier la configuration email
 app.get('/api/admin/test-email', authenticateToken, async (req, res) => {
   try {
