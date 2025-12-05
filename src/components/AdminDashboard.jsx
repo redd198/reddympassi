@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { FaUsers, FaCalendar, FaBook, FaGlobe, FaSignOutAlt, FaChartLine, FaWhatsapp, FaTrash, FaEnvelope, FaNewspaper, FaBriefcase, FaEdit, FaEye } from 'react-icons/fa'
+import { FaUsers, FaCalendar, FaBook, FaGlobe, FaSignOutAlt, FaChartLine, FaWhatsapp, FaTrash, FaEnvelope, FaNewspaper, FaBriefcase, FaEdit, FaEye, FaBars, FaTimes } from 'react-icons/fa'
 
 const AdminDashboard = ({ token, onLogout }) => {
   const [stats, setStats] = useState(null)
@@ -13,6 +13,7 @@ const AdminDashboard = ({ token, onLogout }) => {
   const [blogArticles, setBlogArticles] = useState([])
   const [opportunites, setOpportunites] = useState([])
   const [loading, setLoading] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(true) // Menu ouvert par défaut sur desktop
   const [showValidationModal, setShowValidationModal] = useState(false)
   const [selectedCommande, setSelectedCommande] = useState(null)
   const [selectedReservation, setSelectedReservation] = useState(null)
@@ -299,51 +300,100 @@ const AdminDashboard = ({ token, onLogout }) => {
     )
   }
 
+  const menuItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: FaChartLine },
+    { id: 'leads', label: 'Leads', icon: FaUsers },
+    { id: 'reservations', label: 'Réservations', icon: FaCalendar },
+    { id: 'commandes', label: 'Commandes', icon: FaBook },
+    { id: 'blog', label: 'Blog', icon: FaNewspaper },
+    { id: 'opportunites', label: 'Opportunités IT', icon: FaBriefcase },
+    { id: 'newsletter', label: 'Newsletter', icon: FaEnvelope },
+    { id: 'visitors', label: 'Visiteurs', icon: FaGlobe }
+  ]
+
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <div className="bg-white shadow-md">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-800">Panneau d'Administration</h1>
+    <div className="min-h-screen bg-gray-100 flex">
+      {/* Sidebar */}
+      <motion.aside
+        initial={false}
+        animate={{ x: sidebarOpen ? 0 : -280 }}
+        className="fixed left-0 top-0 h-full w-70 bg-white shadow-xl z-40 flex flex-col"
+      >
+        {/* Sidebar Header */}
+        <div className="p-6 border-b flex justify-between items-center">
+          <h2 className="text-xl font-bold text-gray-800">Admin</h2>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="lg:hidden text-gray-600 hover:text-gray-800"
+          >
+            <FaTimes size={24} />
+          </button>
+        </div>
+
+        {/* Menu Items */}
+        <nav className="flex-1 overflow-y-auto py-4">
+          {menuItems.map(item => (
+            <button
+              key={item.id}
+              onClick={() => {
+                setActiveTab(item.id)
+                // Fermer le menu sur mobile après sélection
+                if (window.innerWidth < 1024) {
+                  setSidebarOpen(false)
+                }
+              }}
+              className={`w-full flex items-center gap-3 px-6 py-4 transition-all ${
+                activeTab === item.id
+                  ? 'bg-blue-600 text-white border-r-4 border-blue-800'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <item.icon size={20} />
+              <span className="font-medium">{item.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        {/* Logout Button */}
+        <div className="p-4 border-t">
           <button
             onClick={onLogout}
-            className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
+            className="w-full flex items-center justify-center gap-2 bg-red-500 text-white px-4 py-3 rounded-lg hover:bg-red-600 transition-colors"
           >
             <FaSignOutAlt />
             Déconnexion
           </button>
         </div>
-      </div>
+      </motion.aside>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Tabs */}
-        <div className="flex gap-4 mb-8 overflow-x-auto">
-          {[
-            { id: 'dashboard', label: 'Dashboard', icon: FaChartLine },
-            { id: 'leads', label: 'Leads', icon: FaUsers },
-            { id: 'reservations', label: 'Réservations', icon: FaCalendar },
-            { id: 'commandes', label: 'Commandes', icon: FaBook },
-            { id: 'blog', label: 'Blog', icon: FaNewspaper },
-            { id: 'opportunites', label: 'Opportunités IT', icon: FaBriefcase },
-            { id: 'newsletter', label: 'Newsletter', icon: FaEnvelope },
-            { id: 'visitors', label: 'Visiteurs', icon: FaGlobe }
-          ].map(tab => (
+      {/* Overlay pour mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Main Content */}
+      <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'lg:ml-70' : 'ml-0'}`}>
+        {/* Top Bar */}
+        <div className="bg-white shadow-md sticky top-0 z-20">
+          <div className="px-6 py-4 flex items-center gap-4">
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
-                activeTab === tab.id
-                  ? 'bg-blue-600 text-white shadow-lg'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="text-gray-600 hover:text-gray-800"
             >
-              <tab.icon />
-              {tab.label}
+              <FaBars size={24} />
             </button>
-          ))}
+            <h1 className="text-2xl font-bold text-gray-800">
+              {menuItems.find(item => item.id === activeTab)?.label || 'Dashboard'}
+            </h1>
+          </div>
         </div>
 
-        {/* Dashboard Tab */}
+        {/* Content Area */}
+        <div className="p-6">
+          {/* Dashboard Tab */}
         {activeTab === 'dashboard' && stats && (
           <div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -1116,6 +1166,8 @@ const AdminDashboard = ({ token, onLogout }) => {
           </motion.div>
         </div>
       )}
+        </div>
+      </div>
     </div>
   )
 }

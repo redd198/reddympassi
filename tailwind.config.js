@@ -13,6 +13,9 @@ export default {
       fontFamily: {
         'poppins': ['Poppins', 'sans-serif'],
       },
+      spacing: {
+        '70': '280px',
+      },
     },
   },
   plugins: [],
