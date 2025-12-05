@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { FaUsers, FaCalendar, FaBook, FaGlobe, FaSignOutAlt, FaChartLine, FaWhatsapp, FaTrash } from 'react-icons/fa'
+import { FaUsers, FaCalendar, FaBook, FaGlobe, FaSignOutAlt, FaChartLine, FaWhatsapp, FaTrash, FaEnvelope } from 'react-icons/fa'
 
 const AdminDashboard = ({ token, onLogout }) => {
   const [stats, setStats] = useState(null)
@@ -9,6 +9,7 @@ const AdminDashboard = ({ token, onLogout }) => {
   const [reservations, setReservations] = useState([])
   const [commandes, setCommandes] = useState([])
   const [visitors, setVisitors] = useState([])
+  const [newsletter, setNewsletter] = useState([])
   const [loading, setLoading] = useState(true)
   const [showValidationModal, setShowValidationModal] = useState(false)
   const [selectedCommande, setSelectedCommande] = useState(null)
@@ -19,12 +20,13 @@ const AdminDashboard = ({ token, onLogout }) => {
     try {
       const headers = { 'Authorization': `Bearer ${token}` }
       
-      const [statsRes, leadsRes, reservationsRes, commandesRes, visitorsRes] = await Promise.all([
+      const [statsRes, leadsRes, reservationsRes, commandesRes, visitorsRes, newsletterRes] = await Promise.all([
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/stats`, { headers }),
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/leads`, { headers }),
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/reservations`, { headers }),
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/commandes`, { headers }),
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/visitors`, { headers })
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/visitors`, { headers }),
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/newsletter`, { headers })
       ])
 
       setStats(await statsRes.json())
@@ -32,6 +34,7 @@ const AdminDashboard = ({ token, onLogout }) => {
       setReservations(await reservationsRes.json())
       setCommandes(await commandesRes.json())
       setVisitors(await visitorsRes.json())
+      setNewsletter(await newsletterRes.json())
     } catch (error) {
       console.error('Erreur:', error)
     } finally {
@@ -169,6 +172,7 @@ const AdminDashboard = ({ token, onLogout }) => {
             { id: 'leads', label: 'Leads', icon: FaUsers },
             { id: 'reservations', label: 'Réservations', icon: FaCalendar },
             { id: 'commandes', label: 'Commandes', icon: FaBook },
+            { id: 'newsletter', label: 'Newsletter', icon: FaEnvelope },
             { id: 'visitors', label: 'Visiteurs', icon: FaGlobe }
           ].map(tab => (
             <button
@@ -348,6 +352,31 @@ const AdminDashboard = ({ token, onLogout }) => {
               </table>
             </div>
           </div>
+        )}
+
+        {/* Newsletter Tab */}
+        {activeTab === 'newsletter' && (
+          <DataTable
+            title="📧 Inscriptions Newsletter"
+            data={newsletter}
+            columns={[
+              { key: 'email', label: 'Email' },
+              { key: 'created_at', label: 'Date d\'inscription', format: (val) => new Date(val).toLocaleDateString('fr-FR') },
+              { 
+                key: 'actions', 
+                label: 'Actions', 
+                format: (val, row) => (
+                  <button
+                    onClick={() => handleDelete('newsletter', row.id)}
+                    className="text-red-600 hover:text-red-800 transition-colors"
+                    title="Supprimer cette inscription"
+                  >
+                    <FaTrash />
+                  </button>
+                )
+              }
+            ]}
+          />
         )}
 
         {/* Visitors Tab */}
