@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { FaUsers, FaCalendar, FaBook, FaGlobe, FaSignOutAlt, FaChartLine, FaWhatsapp, FaTrash, FaEnvelope } from 'react-icons/fa'
+import { FaUsers, FaCalendar, FaBook, FaGlobe, FaSignOutAlt, FaChartLine, FaWhatsapp, FaTrash, FaEnvelope, FaNewspaper, FaBriefcase, FaEdit, FaEye } from 'react-icons/fa'
 
 const AdminDashboard = ({ token, onLogout }) => {
   const [stats, setStats] = useState(null)
@@ -10,6 +10,8 @@ const AdminDashboard = ({ token, onLogout }) => {
   const [commandes, setCommandes] = useState([])
   const [visitors, setVisitors] = useState([])
   const [newsletter, setNewsletter] = useState([])
+  const [blogArticles, setBlogArticles] = useState([])
+  const [opportunites, setOpportunites] = useState([])
   const [loading, setLoading] = useState(true)
   const [showValidationModal, setShowValidationModal] = useState(false)
   const [selectedCommande, setSelectedCommande] = useState(null)
@@ -22,13 +24,15 @@ const AdminDashboard = ({ token, onLogout }) => {
     try {
       const headers = { 'Authorization': `Bearer ${token}` }
       
-      const [statsRes, leadsRes, reservationsRes, commandesRes, visitorsRes, newsletterRes] = await Promise.all([
+      const [statsRes, leadsRes, reservationsRes, commandesRes, visitorsRes, newsletterRes, blogRes, opportunitesRes] = await Promise.all([
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/stats`, { headers }),
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/leads`, { headers }),
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/reservations`, { headers }),
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/commandes`, { headers }),
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/visitors`, { headers }),
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/newsletter`, { headers })
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/newsletter`, { headers }),
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/blog/articles`, { headers }),
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/emploi/opportunites`, { headers })
       ])
 
       setStats(await statsRes.json())
@@ -37,6 +41,8 @@ const AdminDashboard = ({ token, onLogout }) => {
       setCommandes(await commandesRes.json())
       setVisitors(await visitorsRes.json())
       setNewsletter(await newsletterRes.json())
+      setBlogArticles(await blogRes.json())
+      setOpportunites(await opportunitesRes.json())
     } catch (error) {
       console.error('Erreur:', error)
     } finally {
@@ -183,6 +189,8 @@ const AdminDashboard = ({ token, onLogout }) => {
             { id: 'leads', label: 'Leads', icon: FaUsers },
             { id: 'reservations', label: 'Réservations', icon: FaCalendar },
             { id: 'commandes', label: 'Commandes', icon: FaBook },
+            { id: 'blog', label: 'Blog', icon: FaNewspaper },
+            { id: 'opportunites', label: 'Opportunités IT', icon: FaBriefcase },
             { id: 'newsletter', label: 'Newsletter', icon: FaEnvelope },
             { id: 'visitors', label: 'Visiteurs', icon: FaGlobe }
           ].map(tab => (
@@ -406,6 +414,142 @@ const AdminDashboard = ({ token, onLogout }) => {
           </div>
         )}
 
+        {/* Blog Tab */}
+        {activeTab === 'blog' && (
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div className="p-6 border-b flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold">📰 Articles de Blog</h2>
+                <p className="text-gray-600">{blogArticles.length} article(s)</p>
+              </div>
+              <button className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold">
+                + Nouvel article
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Titre</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Catégorie</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {blogArticles.map((article) => (
+                    <tr key={article.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 text-sm text-gray-900">{article.title}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{article.category}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          article.published 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {article.published ? '✓ Publié' : '○ Brouillon'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {new Date(article.created_at).toLocaleDateString('fr-FR')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <div className="flex gap-2">
+                          <button
+                            className="text-blue-600 hover:text-blue-800 transition-colors p-2"
+                            title="Modifier"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            className="text-green-600 hover:text-green-800 transition-colors p-2"
+                            title="Voir"
+                          >
+                            <FaEye />
+                          </button>
+                          <button
+                            onClick={() => handleDelete('blog/articles', article.id)}
+                            className="text-red-600 hover:text-red-800 transition-colors p-2"
+                            title="Supprimer"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Opportunités IT Tab */}
+        {activeTab === 'opportunites' && (
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div className="p-6 border-b flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold">💼 Opportunités d'Emploi IT</h2>
+                <p className="text-gray-600">{opportunites.length} opportunité(s)</p>
+              </div>
+              <button className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold">
+                + Nouvelle opportunité
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Poste</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entreprise</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lieu</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {opportunites.map((opp) => (
+                    <tr key={opp.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 text-sm text-gray-900">{opp.title}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{opp.company}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{opp.location}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{opp.type}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          opp.published 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {opp.published ? '✓ Publié' : '○ Brouillon'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <div className="flex gap-2">
+                          <button
+                            className="text-blue-600 hover:text-blue-800 transition-colors p-2"
+                            title="Modifier"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            onClick={() => handleDelete('emploi/opportunites', opp.id)}
+                            className="text-red-600 hover:text-red-800 transition-colors p-2"
+                            title="Supprimer"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* Newsletter Tab */}
         {activeTab === 'newsletter' && (
           <DataTable
@@ -413,6 +557,8 @@ const AdminDashboard = ({ token, onLogout }) => {
             data={newsletter}
             columns={[
               { key: 'email', label: 'Email' },
+              { key: 'whatsapp', label: 'WhatsApp' },
+              { key: 'type', label: 'Type' },
               { key: 'created_at', label: 'Date d\'inscription', format: (val) => new Date(val).toLocaleDateString('fr-FR') },
               { 
                 key: 'actions', 
