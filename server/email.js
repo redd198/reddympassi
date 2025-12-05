@@ -160,3 +160,65 @@ ${message}
     throw error
   }
 }
+
+// Envoyer le PDF du livre en pièce jointe
+export const sendBookPDF = async (commande, pdfPath) => {
+  const whatsappGroupLink = process.env.WHATSAPP_GROUP_LINK || 'https://chat.whatsapp.com/VOTRE_LIEN'
+  
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: commande.email,
+    subject: `📚 Votre livre "${commande.livre}" est prêt !`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #C41E3A 0%, #8B1429 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+          <h1 style="color: white; margin: 0;">🎉 Félicitations ${commande.nom} !</h1>
+        </div>
+        
+        <div style="background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; border-top: none;">
+          <h2 style="color: #C41E3A;">Votre livre "${commande.livre}" est prêt ! 📚</h2>
+          <p style="font-size: 16px; line-height: 1.6; color: #333;">
+            Vous trouverez votre livre en <strong>pièce jointe</strong> de cet email.
+          </p>
+          
+          <div style="margin: 30px 0; padding: 20px; background: #f0f8ff; border-left: 4px solid #2196F3; border-radius: 4px;">
+            <p style="margin: 0; color: #1565C0;">
+              <strong>💡 Astuce :</strong> Téléchargez le PDF sur votre appareil pour le lire hors ligne !
+            </p>
+          </div>
+        </div>
+        
+        <div style="background: #25D366; padding: 30px; text-align: center; border-radius: 0 0 10px 10px;">
+          <h3 style="color: white; margin-top: 0;">🎁 BONUS : Rejoignez notre communauté !</h3>
+          <p style="color: white; font-size: 16px; line-height: 1.6;">
+            Accédez à des conseils exclusifs, des opportunités en avant-première<br>
+            et posez vos questions directement !
+          </p>
+          <a href="${whatsappGroupLink}" 
+             style="display: inline-block; background: white; color: #25D366; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 15px; font-size: 16px;">
+            👉 Rejoindre le groupe WhatsApp
+          </a>
+        </div>
+        
+        <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
+          <p>Merci pour votre confiance !<br>L'équipe</p>
+        </div>
+      </div>
+    `,
+    attachments: [
+      {
+        filename: `${commande.livre}.pdf`,
+        path: pdfPath
+      }
+    ]
+  }
+
+  try {
+    await transporter.sendMail(mailOptions)
+    console.log('✅ PDF envoyé par email au client')
+    return { success: true }
+  } catch (error) {
+    console.error('❌ Erreur envoi PDF:', error)
+    throw error
+  }
+}

@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken'
 import mysqlPool from './db.js'
 import postgresPool from './db-postgres.js'
 import { getLocationFromIP, getClientIP } from './tracking.js'
-import { sendLeadNotification, sendReservationNotification, sendCommandeNotification, sendValidationEmail } from './email.js'
+import { sendLeadNotification, sendReservationNotification, sendCommandeNotification, sendValidationEmail, sendBookPDF } from './email.js'
 import { adaptQuery, extractRows, extractInsertId, dbType } from './db-helper.js'
 
 dotenv.config()
@@ -903,38 +903,45 @@ app.post('/api/admin/commandes/:id/valider', authenticateToken, async (req, res)
     )
     await pool.query(updateQuery, updateParams)
 
-    // Préparer le message avec les variables
-    const messageFinal = message
-      .replace(/{nom}/g, commande.nom)
-      .replace(/{livre}/g, commande.livre)
-      .replace(/{email}/g, commande.email)
-      .replace(/{whatsapp}/g, commande.whatsapp)
-
-    // Générer le lien selon le canal
-    let lien = ''
-    let emailSent = false
+    // Envoyer automatiquement le PDF par email
+    let pdfSent = false
+    const pdfPath = `./server/pdfs/${commande.livre}.pdf`
     
-    if (canal === 'whatsapp') {
-      const whatsappNumber = commande.whatsapp.replace(/[^0-9]/g, '')
-      lien = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(messageFinal)}`
-    } else if (canal === 'email') {
-      // Envoyer l'email automatiquement
-      try {
-        await sendValidationEmail(commande, messageFinal)
-        emailSent = true
-      } catch (emailError) {
-        console.error('Erreur envoi email:', emailError)
-        // En cas d'erreur, générer quand même le lien mailto comme fallback
-        lien = `mailto:${commande.email}?subject=${encodeURIComponent('Confirmation de commande')}&body=${encodeURIComponent(messageFinal)}`
-      }
+    try {
+      await sendBookPDF(commande, pdfPath)
+      pdfSent = true
+      console.log('✅ PDF envoyé par email')
+    } catch (pdfError) {
+      console.error('⚠️ Erreur envoi PDF:', pdfError.message)
+      // Continuer même si le PDF n'a pas pu être envoyé
     }
+
+    // Préparer le message WhatsApp avec lien du groupe
+    const whatsappGroupLink = process.env.WHATSAPP_GROUP_LINK || 'https://chat.whatsapp.com/VOTRE_LIEN'
+    const whatsappMessage = `Bonjour ${commande.nom},
+
+🎉 Félicitations ! Votre livre "${commande.livre}" vient d'être envoyé par email à ${commande.email} 📧
+
+${pdfSent ? '✅ Le PDF est en pièce jointe de l\'email.' : '⚠️ Vérifiez vos spams si vous ne le voyez pas.'}
+
+🎁 BONUS : Rejoignez notre communauté !
+Accédez à des conseils exclusifs, des opportunités en avant-première et posez vos questions directement !
+
+👉 ${whatsappGroupLink}
+
+Merci pour votre confiance !
+L'équipe`
+
+    // Générer le lien WhatsApp
+    const whatsappNumber = commande.whatsapp.replace(/[^0-9]/g, '')
+    const lien = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`
 
     res.json({
       success: true,
-      message: emailSent ? 'Commande validée et email envoyé' : 'Commande validée',
+      message: pdfSent ? 'Commande validée et PDF envoyé par email' : 'Commande validée (PDF non envoyé)',
       lien,
-      canal,
-      emailSent
+      canal: 'whatsapp',
+      pdfSent
     })
   } catch (error) {
     console.error('Erreur validation commande:', error)
