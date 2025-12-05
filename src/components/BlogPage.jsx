@@ -1,14 +1,40 @@
 import { motion } from 'framer-motion'
-import { FaLinkedin, FaYoutube, FaWhatsapp, FaArrowRight, FaPlay, FaCalendarAlt, FaClock } from 'react-icons/fa'
-import { useState } from 'react'
+import { FaLinkedin, FaYoutube, FaWhatsapp, FaArrowRight, FaPlay, FaCalendarAlt, FaClock, FaEnvelope } from 'react-icons/fa'
+import { useState, useEffect } from 'react'
 import Navbar from './Navbar'
 
 const BlogPage = () => {
+  const [articles, setArticles] = useState([])
+  const [loading, setLoading] = useState(true)
   const [newsletterEmail, setNewsletterEmail] = useState('')
+  const [newsletterWhatsapp, setNewsletterWhatsapp] = useState('')
+  const [newsletterType, setNewsletterType] = useState('email') // 'email' ou 'whatsapp'
   const [newsletterStatus, setNewsletterStatus] = useState('')
+
+  // Charger les articles depuis l'API
+  useEffect(() => {
+    const fetchArticles = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/blog/articles`)
+        const data = await response.json()
+        setArticles(data)
+      } catch (error) {
+        console.error('Erreur chargement articles:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchArticles()
+  }, [])
 
   const handleNewsletterSubmit = async (e) => {
     e.preventDefault()
+    
+    const payload = {
+      type: newsletterType,
+      email: newsletterType === 'email' ? newsletterEmail : null,
+      whatsapp: newsletterType === 'whatsapp' ? newsletterWhatsapp : null
+    }
     
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/newsletter`, {
@@ -16,7 +42,7 @@ const BlogPage = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email: newsletterEmail })
+        body: JSON.stringify(payload)
       })
 
       const data = await response.json()
@@ -24,6 +50,7 @@ const BlogPage = () => {
       if (response.ok) {
         setNewsletterStatus('success')
         setNewsletterEmail('')
+        setNewsletterWhatsapp('')
         setTimeout(() => setNewsletterStatus(''), 3000)
       } else {
         setNewsletterStatus('error')
@@ -61,44 +88,16 @@ const BlogPage = () => {
     },
   }
 
-  const articles = [
-    {
-      id: 1,
-      type: "article",
-      image: "/blog/paiement-electroniques.jpg",
-      category: "Tendances",
-      title: "Numérique : l'essor de la finance numérique au Congo au cœur de « Brazza Fintech tour 2020 »",
-      excerpt: "Le Brazza Fintech Tour 2020 met en lumière l'évolution de la finance numérique au Congo. Un événement clé pour comprendre les innovations fintech et les opportunités de transformation digitale du secteur financier congolais.",
-      date: "15 Janvier 2025",
-      readTime: "5 min",
-      color: "reddy-blue",
-      link: "https://www.adiac-congo.com/content/numerique-lessor-de-la-finance-numerique-au-congo-au-coeur-de-brazza-fintech-tour-2020"
-    },
-    {
-      id: 2,
-      type: "article",
-      image: "/blog/IA.jpg",
-      category: "Innovation",
-      title: "IA : les startups africaines ont levé 1,2 milliard $ en 6 ans",
-      excerpt: "Une analyse des investissements massifs dans les startups africaines spécialisées en intelligence artificielle. Découvrez les chiffres clés et les perspectives de croissance du secteur IA sur le continent.",
-      date: "10 Janvier 2025",
-      readTime: "7 min",
-      color: "reddy-red",
-      link: "https://cio-mag.com/ia-les-startups-africaines-ont-leve-12-milliard-en-6-ans/"
-    },
-    {
-      id: 3,
-      type: "article",
-      image: "/blog/cfa.jfif",
-      category: "Conseils",
-      title: "e-commerce en Afrique - mode d'emploi",
-      excerpt: "Un guide complet pour comprendre les spécificités du e-commerce africain : défis logistiques, solutions de paiement adaptées, stratégies marketing locales et opportunités de croissance sur le continent.",
-      date: "5 Janvier 2025",
-      readTime: "6 min",
-      color: "reddy-blue",
-      link: "https://www.numilog.com/1553348/e-commerce-en-afrique--mode-d-emploi.ebook?utm_source=PDF-excerpt"
-    },
-  ]
+  // Fonction pour déterminer la couleur selon la catégorie
+  const getCategoryColor = (category) => {
+    const colors = {
+      'Tendances': 'reddy-blue',
+      'Innovation': 'reddy-red',
+      'Conseils': 'reddy-blue',
+      'Actualités': 'reddy-red'
+    }
+    return colors[category] || 'reddy-blue'
+  }
 
   const featuredVideo = {
     title: "L'Afrique accélère son inclusion à l'intelligence artificielle",
@@ -209,14 +208,27 @@ const BlogPage = () => {
             Restez informés des dernières tendances et innovations
           </motion.p>
 
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-50px" }}
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
-          >
-            {articles.map((article) => (
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-reddy-blue mx-auto"></div>
+              <p className="text-gray-600 mt-4">Chargement des articles...</p>
+            </div>
+          ) : articles.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-600 text-xl">Aucun article publié pour le moment.</p>
+              <p className="text-gray-500 mt-2">Revenez bientôt pour découvrir nos derniers contenus !</p>
+            </div>
+          ) : (
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-50px" }}
+              className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+            >
+              {articles.map((article) => {
+                const color = getCategoryColor(article.category)
+                return (
               <motion.article
                 key={article.id}
                 variants={cardVariants}
@@ -225,23 +237,21 @@ const BlogPage = () => {
               >
                 {/* Article Image */}
                 <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
-                  <img
-                    src={article.image}
-                    alt={article.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    onError={(e) => {
-                      e.target.style.display = 'none'
-                      e.target.parentElement.innerHTML = `<div class="flex items-center justify-center h-full text-${article.color} text-3xl font-bold">${article.category}</div>`
-                    }}
-                  />
-                  {article.type === "video" && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                      <div className="w-12 h-12 bg-reddy-red rounded-full flex items-center justify-center">
-                        <FaPlay className="text-white ml-1" />
-                      </div>
+                  {article.image ? (
+                    <img
+                      src={article.image}
+                      alt={article.title}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      onError={(e) => {
+                        e.target.style.display = 'none'
+                      }}
+                    />
+                  ) : (
+                    <div className={`flex items-center justify-center h-full text-${color} text-3xl font-bold`}>
+                      {article.category}
                     </div>
                   )}
-                  <span className={`absolute top-4 left-4 bg-${article.color} text-white px-3 py-1 rounded-full text-sm font-semibold`}>
+                  <span className={`absolute top-4 left-4 bg-${color} text-white px-3 py-1 rounded-full text-sm font-semibold`}>
                     {article.category}
                   </span>
                 </div>
@@ -251,11 +261,11 @@ const BlogPage = () => {
                   <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
                     <span className="flex items-center gap-1">
                       <FaCalendarAlt className="text-reddy-blue" />
-                      {article.date}
+                      {new Date(article.created_at).toLocaleDateString('fr-FR')}
                     </span>
                     <span className="flex items-center gap-1">
                       <FaClock className="text-reddy-red" />
-                      {article.readTime}
+                      {article.read_time || '5 min'}
                     </span>
                   </div>
 
@@ -267,26 +277,16 @@ const BlogPage = () => {
                     {article.excerpt}
                   </p>
 
-                  {article.link ? (
-                    <a
-                      href={article.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`inline-flex items-center gap-2 text-${article.color} font-semibold hover:gap-4 transition-all duration-300`}
-                    >
-                      {article.type === "video" ? "Voir la vidéo" : "Lire l'article"}
-                      <FaArrowRight />
-                    </a>
-                  ) : (
-                    <button className={`inline-flex items-center gap-2 text-${article.color} font-semibold hover:gap-4 transition-all duration-300`}>
-                      {article.type === "video" ? "Voir la vidéo" : "Lire l'article"}
-                      <FaArrowRight />
-                    </button>
-                  )}
+                  <button className={`inline-flex items-center gap-2 text-${color} font-semibold hover:gap-4 transition-all duration-300`}>
+                    Lire l'article
+                    <FaArrowRight />
+                  </button>
                 </div>
               </motion.article>
-            ))}
-          </motion.div>
+                )
+              })}
+            </motion.div>
+          )}
 
         </div>
       </section>
@@ -304,21 +304,62 @@ const BlogPage = () => {
             Restez connectés
           </h2>
           <p className="text-xl text-gray-700 mb-8">
-            Recevez nos derniers articles et actualités directement dans votre boîte mail
+            Recevez nos derniers articles et actualités par Email ou WhatsApp
           </p>
 
+          {/* Choix Email ou WhatsApp */}
+          <div className="flex justify-center gap-4 mb-6">
+            <button
+              type="button"
+              onClick={() => setNewsletterType('email')}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
+                newsletterType === 'email'
+                  ? 'bg-reddy-blue text-white shadow-lg'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <FaEnvelope />
+              Email
+            </button>
+            <button
+              type="button"
+              onClick={() => setNewsletterType('whatsapp')}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
+                newsletterType === 'whatsapp'
+                  ? 'bg-green-600 text-white shadow-lg'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <FaWhatsapp />
+              WhatsApp
+            </button>
+          </div>
+
           <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-4 justify-center max-w-xl mx-auto">
-            <input
-              type="email"
-              placeholder="Votre adresse email"
-              value={newsletterEmail}
-              onChange={(e) => setNewsletterEmail(e.target.value)}
-              required
-              className="flex-1 px-6 py-4 rounded-lg border-2 border-gray-300 focus:border-reddy-blue focus:outline-none transition-colors duration-300"
-            />
+            {newsletterType === 'email' ? (
+              <input
+                type="email"
+                placeholder="Votre adresse email"
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
+                required
+                className="flex-1 px-6 py-4 rounded-lg border-2 border-gray-300 focus:border-reddy-blue focus:outline-none transition-colors duration-300"
+              />
+            ) : (
+              <input
+                type="tel"
+                placeholder="Votre numéro WhatsApp (+242...)"
+                value={newsletterWhatsapp}
+                onChange={(e) => setNewsletterWhatsapp(e.target.value)}
+                required
+                className="flex-1 px-6 py-4 rounded-lg border-2 border-gray-300 focus:border-green-600 focus:outline-none transition-colors duration-300"
+              />
+            )}
             <button 
               type="submit"
-              className="px-8 py-4 bg-reddy-red text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+              className={`px-8 py-4 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ${
+                newsletterType === 'email' ? 'bg-reddy-red' : 'bg-green-600'
+              }`}
             >
               {newsletterStatus === 'success' ? '✓ Inscrit !' : 'S\'abonner'}
             </button>
