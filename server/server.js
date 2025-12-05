@@ -636,6 +636,32 @@ app.get('/api/admin/migrate-commandes', authenticateToken, async (req, res) => {
   }
 })
 
+// Ajouter la colonne statut aux réservations si elle n'existe pas (migration)
+app.get('/api/admin/migrate-reservations', authenticateToken, async (req, res) => {
+  try {
+    const isPostgres = process.env.DATABASE_URL?.startsWith('postgresql://')
+    
+    if (isPostgres) {
+      await pool.query(`
+        ALTER TABLE reservations 
+        ADD COLUMN IF NOT EXISTS statut VARCHAR(50) DEFAULT 'en_attente'
+      `)
+    } else {
+      // MySQL
+      await pool.query(`
+        ALTER TABLE reservations 
+        ADD COLUMN statut VARCHAR(50) DEFAULT 'en_attente'
+      `)
+    }
+    
+    res.json({ success: true, message: 'Migration réservations effectuée' })
+  } catch (error) {
+    // Si la colonne existe déjà, ignorer l'erreur
+    console.log('Info migration réservations:', error.message)
+    res.json({ success: true, message: 'Colonne statut déjà existante ou migration effectuée' })
+  }
+})
+
 // Route de test pour vérifier la configuration email
 app.get('/api/admin/test-email', authenticateToken, async (req, res) => {
   try {
