@@ -638,6 +638,65 @@ app.post('/api/admin/commandes/:id/valider', authenticateToken, async (req, res)
   }
 })
 
+// Valider une réservation et envoyer un message
+app.post('/api/admin/reservations/:id/valider', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params
+    const { canal, message } = req.body
+
+    if (!canal || !message) {
+      return res.status(400).json({ error: 'Canal et message requis' })
+    }
+
+    // Récupérer les infos de la réservation
+    const { query: selectQuery, params: selectParams } = adaptQuery(
+      'SELECT * FROM reservations WHERE id = ?',
+      [id]
+    )
+    const result = await pool.query(selectQuery, selectParams)
+    const reservations = extractRows(result)
+    
+    if (reservations.length === 0) {
+      return res.status(404).json({ error: 'Réservation non trouvée' })
+    }
+
+    const reservation = reservations[0]
+
+    // Mettre à jour le statut de la réservation
+    const { query: updateQuery, params: updateParams } = adaptQuery(
+      'UPDATE reservations SET statut = ? WHERE id = ?',
+      ['validee', id]
+    )
+    await pool.query(updateQuery, updateParams)
+
+    // Préparer le message avec les variables
+    const messageFinal = message
+      .replace(/{nom}/g, reservation.nom)
+      .replace(/{theme}/g, reservation.theme)
+      .replace(/{date}/g, new Date(reservation.date_souhaitee).toLocaleDateString('fr-FR'))
+      .replace(/{email}/g, reservation.email)
+      .replace(/{whatsapp}/g, reservation.whatsapp)
+
+    // Générer le lien WhatsApp
+    let lien = ''
+    
+    if (canal === 'whatsapp') {
+      const whatsappNumber = reservation.whatsapp.replace(/[^0-9]/g, '')
+      lien = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(messageFinal)}`
+    }
+
+    res.json({
+      success: true,
+      message: 'Réservation validée',
+      lien,
+      canal
+    })
+  } catch (error) {
+    console.error('Erreur validation réservation:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
 // Récupérer les visiteurs
 app.get('/api/admin/visitors', authenticateToken, async (req, res) => {
   try {

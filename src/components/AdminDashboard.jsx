@@ -13,6 +13,8 @@ const AdminDashboard = ({ token, onLogout }) => {
   const [loading, setLoading] = useState(true)
   const [showValidationModal, setShowValidationModal] = useState(false)
   const [selectedCommande, setSelectedCommande] = useState(null)
+  const [selectedReservation, setSelectedReservation] = useState(null)
+  const [validationType, setValidationType] = useState('commande') // 'commande' ou 'reservation'
   const [validationCanal, setValidationCanal] = useState('whatsapp')
   const [validationMessage, setValidationMessage] = useState('')
 
@@ -54,22 +56,36 @@ const AdminDashboard = ({ token, onLogout }) => {
   }, [token])
 
   const handleValidateCommande = (commande) => {
+    setValidationType('commande')
     setSelectedCommande(commande)
+    setSelectedReservation(null)
     setValidationMessage(`Bonjour ${commande.nom},\n\nVotre commande pour le livre "${commande.livre}" a été validée !\n\nNous vous contacterons très prochainement pour finaliser la livraison.\n\nMerci pour votre confiance !\n\nCordialement,\nL'équipe`)
+    setShowValidationModal(true)
+  }
+
+  const handleValidateReservation = (reservation) => {
+    setValidationType('reservation')
+    setSelectedReservation(reservation)
+    setSelectedCommande(null)
+    setValidationMessage(`Bonjour ${reservation.nom},\n\nVotre réservation pour le coaching "${reservation.theme}" a été validée !\n\nDate souhaitée : ${new Date(reservation.date_souhaitee).toLocaleDateString('fr-FR')}\n\nNous vous contacterons très prochainement pour confirmer les détails et vous envoyer le document de confirmation.\n\nMerci pour votre confiance !\n\nCordialement,\nL'équipe`)
     setShowValidationModal(true)
   }
 
   const submitValidation = async () => {
     try {
-      // Sauvegarder l'ID avant de fermer le modal
-      const commandeId = selectedCommande.id
+      const isCommande = validationType === 'commande'
+      const item = isCommande ? selectedCommande : selectedReservation
+      const itemId = item.id
+      const itemType = isCommande ? 'commandes' : 'reservations'
+      const itemLabel = isCommande ? 'Commande' : 'Réservation'
       
       // Fermer le modal immédiatement pour une meilleure UX
       setShowValidationModal(false)
       setSelectedCommande(null)
+      setSelectedReservation(null)
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/commandes/${commandeId}/valider`,
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/${itemType}/${itemId}/valider`,
         {
           method: 'POST',
           headers: {
@@ -86,17 +102,12 @@ const AdminDashboard = ({ token, onLogout }) => {
       const data = await response.json()
 
       if (data.success) {
-        // Toujours ouvrir WhatsApp (même pour email, car SMTP est bloqué sur Render)
+        // Toujours ouvrir WhatsApp
         if (data.lien) {
           window.open(data.lien, '_blank')
         }
         
-        // Message selon le canal choisi
-        if (validationCanal === 'email') {
-          alert('✅ Commande validée !\n\n⚠️ L\'envoi automatique d\'email n\'est pas disponible sur Render.\n\nVeuillez envoyer le message manuellement à : ' + selectedCommande.email)
-        } else {
-          alert('✅ Commande validée ! Le lien WhatsApp a été ouvert.')
-        }
+        alert(`✅ ${itemLabel} validée ! Le lien WhatsApp a été ouvert.`)
         
         // Rafraîchir les données après l'alerte
         await fetchData()
@@ -261,31 +272,72 @@ const AdminDashboard = ({ token, onLogout }) => {
 
         {/* Reservations Tab */}
         {activeTab === 'reservations' && (
-          <DataTable
-            title="📅 Liste des Réservations"
-            data={reservations}
-            columns={[
-              { key: 'nom', label: 'Nom' },
-              { key: 'email', label: 'Email' },
-              { key: 'whatsapp', label: 'WhatsApp' },
-              { key: 'theme', label: 'Thème' },
-              { key: 'date_souhaitee', label: 'Date', format: (val) => new Date(val).toLocaleDateString('fr-FR') },
-              { key: 'statut', label: 'Statut' },
-              { 
-                key: 'actions', 
-                label: 'Actions', 
-                format: (val, row) => (
-                  <button
-                    onClick={() => handleDelete('reservations', row.id)}
-                    className="text-red-600 hover:text-red-800 transition-colors"
-                    title="Supprimer cette réservation"
-                  >
-                    <FaTrash />
-                  </button>
-                )
-              }
-            ]}
-          />
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div className="p-6 border-b">
+              <h2 className="text-2xl font-bold">📅 Liste des Réservations</h2>
+              <p className="text-gray-600">{reservations.length} entrée(s)</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">WhatsApp</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thème</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date souhaitée</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date création</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {reservations.map((reservation) => (
+                    <tr key={reservation.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{reservation.nom}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{reservation.email}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{reservation.whatsapp}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{reservation.theme}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {new Date(reservation.date_souhaitee).toLocaleDateString('fr-FR')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          reservation.statut === 'validee' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {reservation.statut === 'validee' ? '✓ Validée' : '⏳ En attente'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {new Date(reservation.created_at).toLocaleDateString('fr-FR')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <div className="flex gap-2">
+                          {reservation.statut !== 'validee' && (
+                            <button
+                              onClick={() => handleValidateReservation(reservation)}
+                              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+                            >
+                              ✓ Valider
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDelete('reservations', reservation.id)}
+                            className="text-red-600 hover:text-red-800 transition-colors p-2"
+                            title="Supprimer cette réservation"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
 
         {/* Commandes Tab */}
@@ -428,7 +480,7 @@ const AdminDashboard = ({ token, onLogout }) => {
       </div>
 
       {/* Modal de validation */}
-      {showValidationModal && selectedCommande && (
+      {showValidationModal && (selectedCommande || selectedReservation) && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -436,9 +488,14 @@ const AdminDashboard = ({ token, onLogout }) => {
             className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
           >
             <div className="p-6 border-b">
-              <h3 className="text-2xl font-bold">Valider la commande</h3>
+              <h3 className="text-2xl font-bold">
+                {validationType === 'commande' ? 'Valider la commande' : 'Valider la réservation'}
+              </h3>
               <p className="text-gray-600 mt-1">
-                Commande de {selectedCommande.nom} - {selectedCommande.livre}
+                {validationType === 'commande' 
+                  ? `Commande de ${selectedCommande.nom} - ${selectedCommande.livre}`
+                  : `Réservation de ${selectedReservation.nom} - ${selectedReservation.theme}`
+                }
               </p>
             </div>
 
@@ -466,7 +523,10 @@ const AdminDashboard = ({ token, onLogout }) => {
                   placeholder="Personnalisez votre message..."
                 />
                 <p className="text-xs text-gray-500 mt-2">
-                  Variables disponibles: {'{nom}'}, {'{livre}'}, {'{email}'}, {'{whatsapp}'}
+                  {validationType === 'commande' 
+                    ? `Variables disponibles: {nom}, {livre}, {email}, {whatsapp}`
+                    : `Variables disponibles: {nom}, {theme}, {date}, {email}, {whatsapp}`
+                  }
                 </p>
               </div>
 
@@ -474,11 +534,19 @@ const AdminDashboard = ({ token, onLogout }) => {
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-sm font-semibold mb-2">Aperçu du message :</p>
                 <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                  {validationMessage
-                    .replace(/{nom}/g, selectedCommande.nom)
-                    .replace(/{livre}/g, selectedCommande.livre)
-                    .replace(/{email}/g, selectedCommande.email)
-                    .replace(/{whatsapp}/g, selectedCommande.whatsapp)}
+                  {validationType === 'commande' 
+                    ? validationMessage
+                        .replace(/{nom}/g, selectedCommande.nom)
+                        .replace(/{livre}/g, selectedCommande.livre)
+                        .replace(/{email}/g, selectedCommande.email)
+                        .replace(/{whatsapp}/g, selectedCommande.whatsapp)
+                    : validationMessage
+                        .replace(/{nom}/g, selectedReservation.nom)
+                        .replace(/{theme}/g, selectedReservation.theme)
+                        .replace(/{date}/g, new Date(selectedReservation.date_souhaitee).toLocaleDateString('fr-FR'))
+                        .replace(/{email}/g, selectedReservation.email)
+                        .replace(/{whatsapp}/g, selectedReservation.whatsapp)
+                  }
                 </p>
               </div>
             </div>
@@ -488,6 +556,7 @@ const AdminDashboard = ({ token, onLogout }) => {
                 onClick={() => {
                   setShowValidationModal(false)
                   setSelectedCommande(null)
+                  setSelectedReservation(null)
                 }}
                 className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
