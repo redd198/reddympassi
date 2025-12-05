@@ -19,6 +19,32 @@ const AdminDashboard = ({ token, onLogout }) => {
   const [validationType, setValidationType] = useState('commande') // 'commande' ou 'reservation'
   const [validationCanal, setValidationCanal] = useState('whatsapp')
   const [validationMessage, setValidationMessage] = useState('')
+  
+  // États pour les formulaires Blog et Opportunités
+  const [showBlogModal, setShowBlogModal] = useState(false)
+  const [showOpportuniteModal, setShowOpportuniteModal] = useState(false)
+  const [editingArticle, setEditingArticle] = useState(null)
+  const [editingOpportunite, setEditingOpportunite] = useState(null)
+  const [articleForm, setArticleForm] = useState({
+    title: '',
+    excerpt: '',
+    content: '',
+    category: 'Innovation',
+    image: '',
+    read_time: '5 min',
+    published: false
+  })
+  const [opportuniteForm, setOpportuniteForm] = useState({
+    title: '',
+    company: '',
+    location: '',
+    type: 'CDI',
+    description: '',
+    requirements: '',
+    salary: '',
+    link: '',
+    published: false
+  })
 
   const fetchData = async () => {
     try {
@@ -154,6 +180,114 @@ const AdminDashboard = ({ token, onLogout }) => {
     } catch (error) {
       console.error('Erreur suppression:', error)
       alert('❌ Erreur lors de la suppression')
+    }
+  }
+
+  // Fonctions Blog
+  const handleNewArticle = () => {
+    setEditingArticle(null)
+    setArticleForm({
+      title: '',
+      excerpt: '',
+      content: '',
+      category: 'Innovation',
+      image: '',
+      read_time: '5 min',
+      published: false
+    })
+    setShowBlogModal(true)
+  }
+
+  const handleEditArticle = (article) => {
+    setEditingArticle(article)
+    setArticleForm(article)
+    setShowBlogModal(true)
+  }
+
+  const handleSaveArticle = async () => {
+    try {
+      const url = editingArticle
+        ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/blog/articles/${editingArticle.id}`
+        : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/blog/articles`
+      
+      const method = editingArticle ? 'PUT' : 'POST'
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(articleForm)
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        alert(`✅ Article ${editingArticle ? 'modifié' : 'créé'} avec succès`)
+        setShowBlogModal(false)
+        await fetchData()
+      } else {
+        alert('❌ Erreur lors de la sauvegarde')
+      }
+    } catch (error) {
+      console.error('Erreur:', error)
+      alert('❌ Erreur lors de la sauvegarde')
+    }
+  }
+
+  // Fonctions Opportunités
+  const handleNewOpportunite = () => {
+    setEditingOpportunite(null)
+    setOpportuniteForm({
+      title: '',
+      company: '',
+      location: '',
+      type: 'CDI',
+      description: '',
+      requirements: '',
+      salary: '',
+      link: '',
+      published: false
+    })
+    setShowOpportuniteModal(true)
+  }
+
+  const handleEditOpportunite = (opp) => {
+    setEditingOpportunite(opp)
+    setOpportuniteForm(opp)
+    setShowOpportuniteModal(true)
+  }
+
+  const handleSaveOpportunite = async () => {
+    try {
+      const url = editingOpportunite
+        ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/emploi/opportunites/${editingOpportunite.id}`
+        : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/emploi/opportunites`
+      
+      const method = editingOpportunite ? 'PUT' : 'POST'
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(opportuniteForm)
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        alert(`✅ Opportunité ${editingOpportunite ? 'modifiée' : 'créée'} avec succès`)
+        setShowOpportuniteModal(false)
+        await fetchData()
+      } else {
+        alert('❌ Erreur lors de la sauvegarde')
+      }
+    } catch (error) {
+      console.error('Erreur:', error)
+      alert('❌ Erreur lors de la sauvegarde')
     }
   }
 
@@ -422,7 +556,10 @@ const AdminDashboard = ({ token, onLogout }) => {
                 <h2 className="text-2xl font-bold">📰 Articles de Blog</h2>
                 <p className="text-gray-600">{blogArticles.length} article(s)</p>
               </div>
-              <button className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold">
+              <button 
+                onClick={handleNewArticle}
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+              >
                 + Nouvel article
               </button>
             </div>
@@ -457,16 +594,11 @@ const AdminDashboard = ({ token, onLogout }) => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <div className="flex gap-2">
                           <button
+                            onClick={() => handleEditArticle(article)}
                             className="text-blue-600 hover:text-blue-800 transition-colors p-2"
                             title="Modifier"
                           >
                             <FaEdit />
-                          </button>
-                          <button
-                            className="text-green-600 hover:text-green-800 transition-colors p-2"
-                            title="Voir"
-                          >
-                            <FaEye />
                           </button>
                           <button
                             onClick={() => handleDelete('blog/articles', article.id)}
@@ -493,7 +625,10 @@ const AdminDashboard = ({ token, onLogout }) => {
                 <h2 className="text-2xl font-bold">💼 Opportunités d'Emploi IT</h2>
                 <p className="text-gray-600">{opportunites.length} opportunité(s)</p>
               </div>
-              <button className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold">
+              <button 
+                onClick={handleNewOpportunite}
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+              >
                 + Nouvelle opportunité
               </button>
             </div>
@@ -528,6 +663,7 @@ const AdminDashboard = ({ token, onLogout }) => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <div className="flex gap-2">
                           <button
+                            onClick={() => handleEditOpportunite(opp)}
                             className="text-blue-600 hover:text-blue-800 transition-colors p-2"
                             title="Modifier"
                           >
@@ -714,6 +850,267 @@ const AdminDashboard = ({ token, onLogout }) => {
               >
                 <FaWhatsapp />
                 Valider et envoyer via WhatsApp
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Modal Blog Article */}
+      {showBlogModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-xl shadow-2xl max-w-3xl w-full my-8"
+          >
+            <div className="p-6 border-b">
+              <h3 className="text-2xl font-bold">
+                {editingArticle ? 'Modifier l\'article' : 'Nouvel article'}
+              </h3>
+            </div>
+
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+              <div>
+                <label className="block text-sm font-semibold mb-2">Titre *</label>
+                <input
+                  type="text"
+                  value={articleForm.title}
+                  onChange={(e) => setArticleForm({...articleForm, title: e.target.value})}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Titre de l'article"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">Catégorie *</label>
+                <select
+                  value={articleForm.category}
+                  onChange={(e) => setArticleForm({...articleForm, category: e.target.value})}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Innovation">Innovation</option>
+                  <option value="Tendances">Tendances</option>
+                  <option value="Conseils">Conseils</option>
+                  <option value="Actualités">Actualités</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">Résumé *</label>
+                <textarea
+                  value={articleForm.excerpt}
+                  onChange={(e) => setArticleForm({...articleForm, excerpt: e.target.value})}
+                  rows={3}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Résumé court de l'article"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">Contenu complet *</label>
+                <textarea
+                  value={articleForm.content}
+                  onChange={(e) => setArticleForm({...articleForm, content: e.target.value})}
+                  rows={8}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Contenu complet de l'article"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-2">URL Image</label>
+                  <input
+                    type="text"
+                    value={articleForm.image}
+                    onChange={(e) => setArticleForm({...articleForm, image: e.target.value})}
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="/blog/image.jpg"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Temps de lecture</label>
+                  <input
+                    type="text"
+                    value={articleForm.read_time}
+                    onChange={(e) => setArticleForm({...articleForm, read_time: e.target.value})}
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="5 min"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="published"
+                  checked={articleForm.published}
+                  onChange={(e) => setArticleForm({...articleForm, published: e.target.checked})}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="published" className="text-sm font-semibold">
+                  Publier immédiatement
+                </label>
+              </div>
+            </div>
+
+            <div className="p-6 border-t flex gap-3 justify-end">
+              <button
+                onClick={() => setShowBlogModal(false)}
+                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSaveArticle}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                {editingArticle ? 'Modifier' : 'Créer'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Modal Opportunité */}
+      {showOpportuniteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-xl shadow-2xl max-w-3xl w-full my-8"
+          >
+            <div className="p-6 border-b">
+              <h3 className="text-2xl font-bold">
+                {editingOpportunite ? 'Modifier l\'opportunité' : 'Nouvelle opportunité'}
+              </h3>
+            </div>
+
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+              <div>
+                <label className="block text-sm font-semibold mb-2">Titre du poste *</label>
+                <input
+                  type="text"
+                  value={opportuniteForm.title}
+                  onChange={(e) => setOpportuniteForm({...opportuniteForm, title: e.target.value})}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Ex: Développeur Full Stack"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Entreprise *</label>
+                  <input
+                    type="text"
+                    value={opportuniteForm.company}
+                    onChange={(e) => setOpportuniteForm({...opportuniteForm, company: e.target.value})}
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Nom de l'entreprise"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Lieu</label>
+                  <input
+                    type="text"
+                    value={opportuniteForm.location}
+                    onChange={(e) => setOpportuniteForm({...opportuniteForm, location: e.target.value})}
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Brazzaville, Congo"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">Type de contrat *</label>
+                <select
+                  value={opportuniteForm.type}
+                  onChange={(e) => setOpportuniteForm({...opportuniteForm, type: e.target.value})}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="CDI">CDI</option>
+                  <option value="CDD">CDD</option>
+                  <option value="Stage">Stage</option>
+                  <option value="Freelance">Freelance</option>
+                  <option value="Alternance">Alternance</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">Description *</label>
+                <textarea
+                  value={opportuniteForm.description}
+                  onChange={(e) => setOpportuniteForm({...opportuniteForm, description: e.target.value})}
+                  rows={5}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Description complète du poste"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">Compétences requises</label>
+                <textarea
+                  value={opportuniteForm.requirements}
+                  onChange={(e) => setOpportuniteForm({...opportuniteForm, requirements: e.target.value})}
+                  rows={3}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="React, Node.js, PostgreSQL..."
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Salaire</label>
+                  <input
+                    type="text"
+                    value={opportuniteForm.salary}
+                    onChange={(e) => setOpportuniteForm({...opportuniteForm, salary: e.target.value})}
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="À négocier"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Lien candidature</label>
+                  <input
+                    type="url"
+                    value={opportuniteForm.link}
+                    onChange={(e) => setOpportuniteForm({...opportuniteForm, link: e.target.value})}
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="published-opp"
+                  checked={opportuniteForm.published}
+                  onChange={(e) => setOpportuniteForm({...opportuniteForm, published: e.target.checked})}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="published-opp" className="text-sm font-semibold">
+                  Publier immédiatement
+                </label>
+              </div>
+            </div>
+
+            <div className="p-6 border-t flex gap-3 justify-end">
+              <button
+                onClick={() => setShowOpportuniteModal(false)}
+                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSaveOpportunite}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                {editingOpportunite ? 'Modifier' : 'Créer'}
               </button>
             </div>
           </motion.div>
