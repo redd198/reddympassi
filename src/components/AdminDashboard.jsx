@@ -237,7 +237,20 @@ const AdminDashboard = ({ token, onLogout }) => {
               { key: 'source', label: 'Source' },
               { key: 'produit', label: 'Produit' },
               { key: 'statut', label: 'Statut' },
-              { key: 'created_at', label: 'Date', format: (val) => new Date(val).toLocaleDateString('fr-FR') }
+              { key: 'created_at', label: 'Date', format: (val) => new Date(val).toLocaleDateString('fr-FR') },
+              { 
+                key: 'actions', 
+                label: 'Actions', 
+                format: (val, row) => (
+                  <button
+                    onClick={() => handleDelete('leads', row.id)}
+                    className="text-red-600 hover:text-red-800 transition-colors"
+                    title="Supprimer ce lead"
+                  >
+                    <FaTrash />
+                  </button>
+                )
+              }
             ]}
           />
         )}
@@ -253,7 +266,20 @@ const AdminDashboard = ({ token, onLogout }) => {
               { key: 'whatsapp', label: 'WhatsApp' },
               { key: 'theme', label: 'Thème' },
               { key: 'date_souhaitee', label: 'Date', format: (val) => new Date(val).toLocaleDateString('fr-FR') },
-              { key: 'statut', label: 'Statut' }
+              { key: 'statut', label: 'Statut' },
+              { 
+                key: 'actions', 
+                label: 'Actions', 
+                format: (val, row) => (
+                  <button
+                    onClick={() => handleDelete('reservations', row.id)}
+                    className="text-red-600 hover:text-red-800 transition-colors"
+                    title="Supprimer cette réservation"
+                  >
+                    <FaTrash />
+                  </button>
+                )
+              }
             ]}
           />
         )}
@@ -298,14 +324,23 @@ const AdminDashboard = ({ token, onLogout }) => {
                         {new Date(commande.created_at).toLocaleDateString('fr-FR')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {commande.statut !== 'validee' && (
+                        <div className="flex gap-2">
+                          {commande.statut !== 'validee' && (
+                            <button
+                              onClick={() => handleValidateCommande(commande)}
+                              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+                            >
+                              ✓ Valider
+                            </button>
+                          )}
                           <button
-                            onClick={() => handleValidateCommande(commande)}
-                            className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+                            onClick={() => handleDelete('commandes', commande.id)}
+                            className="text-red-600 hover:text-red-800 transition-colors p-2"
+                            title="Supprimer cette commande"
                           >
-                            ✓ Valider
+                            <FaTrash />
                           </button>
-                        )}
+                        </div>
                       </td>
                     </tr>
                   ))}
