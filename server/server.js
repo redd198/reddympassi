@@ -224,10 +224,22 @@ app.post('/api/leads', async (req, res) => {
     // Envoyer notification email
     await sendLeadNotification({ prenom, email, whatsapp, preference, source, produit })
 
+    // Si c'est pour le livre gratuit, envoyer le PDF automatiquement
+    if (source === 'livre-gratuit') {
+      try {
+        await sendBookPDF({ prenom, email, whatsapp, preference })
+        console.log(`✅ PDF envoyé à ${prenom} via ${preference}`)
+      } catch (pdfError) {
+        console.error('⚠️ Erreur envoi PDF:', pdfError.message)
+        // Ne pas bloquer la réponse si l'envoi du PDF échoue
+      }
+    }
+
     res.status(201).json({
       success: true,
       message: 'Lead enregistré avec succès',
-      id: insertId
+      id: insertId,
+      pdfSent: source === 'livre-gratuit'
     })
   } catch (error) {
     // PostgreSQL utilise '23505' pour duplicate key, MySQL utilise 'ER_DUP_ENTRY'

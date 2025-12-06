@@ -84,10 +84,20 @@ const LandingLivreGratuit = () => {
 
           <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-8">
             <h2 className="text-lg font-semibold text-blue-900 mb-4">
-              📧 Consultez votre {formData.preference === 'whatsapp' ? 'WhatsApp' : 'email'}
+              📧 Vérifiez votre {formData.preference === 'whatsapp' ? 'WhatsApp' : 'email'}
             </h2>
             <p className="text-gray-700 mb-4">
-              Nous vous avons envoyé le lien de téléchargement sur :
+              {formData.preference === 'whatsapp' ? (
+                <>
+                  Nous vous avons envoyé le lien de téléchargement sur WhatsApp.<br />
+                  <span className="text-sm text-gray-600">Si vous ne recevez rien dans les 5 minutes, contactez-nous directement.</span>
+                </>
+              ) : (
+                <>
+                  Nous vous avons envoyé le lien de téléchargement par email.<br />
+                  <span className="text-sm text-gray-600">Vérifiez aussi vos spams si vous ne le voyez pas.</span>
+                </>
+              )}
             </p>
             <div className="flex items-center justify-center gap-2 text-blue-600 font-semibold">
               {formData.preference === 'whatsapp' ? (

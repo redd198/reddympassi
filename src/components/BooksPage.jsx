@@ -13,6 +13,7 @@ const BooksPage = () => {
   
   const [showOrderForm, setShowOrderForm] = useState(false)
   const [orderSubmitted, setOrderSubmitted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleOrderClick = (bookTitle) => {
     // Vérifier si l'utilisateur a déjà une commande en cours
@@ -45,6 +46,8 @@ const BooksPage = () => {
       return
     }
     
+    setIsSubmitting(true)
+    
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/commandes`, {
         method: 'POST',
@@ -61,13 +64,18 @@ const BooksPage = () => {
           date: new Date().toISOString()
         }))
         
-        setOrderSubmitted(true)
-        // Ne plus fermer automatiquement - laisser l'utilisateur voir le message
+        // Délai de 1.5 secondes avant d'afficher le message de félicitation
+        setTimeout(() => {
+          setIsSubmitting(false)
+          setOrderSubmitted(true)
+        }, 1500)
       } else {
+        setIsSubmitting(false)
         alert('Erreur lors de l\'envoi de la commande')
       }
     } catch (error) {
       console.error('Erreur:', error)
+      setIsSubmitting(false)
       alert('Erreur de connexion au serveur')
     }
   }
@@ -316,9 +324,17 @@ const BooksPage = () => {
 
                   <button
                     type="submit"
-                    className="w-full py-4 bg-reddy-red text-white font-bold text-lg rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                    disabled={isSubmitting}
+                    className="w-full py-4 bg-reddy-red text-white font-bold text-lg rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                   >
-                    Envoyer la commande
+                    {isSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                        Envoi en cours...
+                      </>
+                    ) : (
+                      'Envoyer la commande'
+                    )}
                   </button>
                 </form>
               </>
