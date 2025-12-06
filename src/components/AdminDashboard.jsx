@@ -940,7 +940,7 @@ const AdminDashboard = ({ token, onLogout }) => {
             <div className="p-6 border-b flex justify-between items-center">
               <div>
                 <h2 className="text-2xl font-bold">🎥 Vidéos Mises en Avant</h2>
-                <p className="text-gray-600">{videos.length} vidéo(s)</p>
+                <p className="text-gray-600">{videos?.length || 0} vidéo(s)</p>
               </div>
               <button 
                 onClick={handleNewVideo}
@@ -961,47 +961,65 @@ const AdminDashboard = ({ token, onLogout }) => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {videos.map((video) => (
-                    <tr key={video.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm text-gray-900">{video.title}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        <a href={video.video_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">
-                          <FaPlay className="text-xs" />
-                          Voir la vidéo
-                        </a>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          video.published 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {video.published ? '✓ Publié' : '○ Brouillon'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(video.created_at).toLocaleDateString('fr-FR')}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <div className="flex gap-2">
+                  {videos && videos.length > 0 ? (
+                    videos.map((video) => (
+                      <tr key={video.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 text-sm text-gray-900">{video.title}</td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          <a href={video.video_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">
+                            <FaPlay className="text-xs" />
+                            Voir la vidéo
+                          </a>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            video.published 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {video.published ? '✓ Publié' : '○ Brouillon'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(video.created_at).toLocaleDateString('fr-FR')}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleEditVideo(video)}
+                              className="text-blue-600 hover:text-blue-800 transition-colors p-2"
+                              title="Modifier"
+                            >
+                              <FaEdit />
+                            </button>
+                            <button
+                              onClick={() => handleDelete('featured-videos', video.id)}
+                              className="text-red-600 hover:text-red-800 transition-colors p-2"
+                              title="Supprimer"
+                            >
+                              <FaTrash />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5" className="px-6 py-12 text-center">
+                        <div className="text-gray-400">
+                          <FaPlay className="text-6xl mx-auto mb-4 opacity-20" />
+                          <p className="text-xl font-semibold text-gray-600 mb-2">Aucune vidéo</p>
+                          <p className="text-gray-500 mb-4">Créez votre première vidéo mise en avant</p>
                           <button
-                            onClick={() => handleEditVideo(video)}
-                            className="text-blue-600 hover:text-blue-800 transition-colors p-2"
-                            title="Modifier"
+                            onClick={handleNewVideo}
+                            className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
                           >
-                            <FaEdit />
-                          </button>
-                          <button
-                            onClick={() => handleDelete('featured-videos', video.id)}
-                            className="text-red-600 hover:text-red-800 transition-colors p-2"
-                            title="Supprimer"
-                          >
-                            <FaTrash />
+                            + Créer une vidéo
                           </button>
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
