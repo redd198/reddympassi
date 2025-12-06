@@ -6,8 +6,10 @@ import Navbar from './Navbar'
 const BlogPage = () => {
   const [articles, setArticles] = useState([])
   const [opportunites, setOpportunites] = useState([])
+  const [featuredVideo, setFeaturedVideo] = useState(null)
   const [loading, setLoading] = useState(true)
   const [loadingOpportunites, setLoadingOpportunites] = useState(true)
+  const [loadingVideo, setLoadingVideo] = useState(true)
   const [newsletterEmail, setNewsletterEmail] = useState('')
   const [newsletterWhatsapp, setNewsletterWhatsapp] = useState('')
   const [newsletterType, setNewsletterType] = useState('email') // 'email' ou 'whatsapp'
@@ -43,6 +45,22 @@ const BlogPage = () => {
       }
     }
     fetchOpportunites()
+  }, [])
+
+  // Charger la vidéo mise en avant depuis l'API
+  useEffect(() => {
+    const fetchFeaturedVideo = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/featured-video`)
+        const data = await response.json()
+        setFeaturedVideo(data)
+      } catch (error) {
+        console.error('Erreur chargement vidéo:', error)
+      } finally {
+        setLoadingVideo(false)
+      }
+    }
+    fetchFeaturedVideo()
   }, [])
 
   const handleNewsletterSubmit = async (e) => {
@@ -117,13 +135,6 @@ const BlogPage = () => {
     return colors[category] || 'reddy-blue'
   }
 
-  const featuredVideo = {
-    title: "L'Afrique accélère son inclusion à l'intelligence artificielle",
-    description: "Découvrez comment l'Afrique s'approprie l'intelligence artificielle pour transformer son économie et créer des solutions innovantes adaptées aux réalités locales. Une analyse approfondie des initiatives et opportunités du continent.",
-    thumbnail: "/blog/video-ia-afrique.jpg",
-    videoUrl: "https://www.youtube.com/watch?v=YSVi4X10OUY"
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 font-poppins">
       <Navbar />
@@ -151,58 +162,60 @@ const BlogPage = () => {
       </section>
 
       {/* Featured Video Section */}
-      <section className="py-16 px-6">
-        <div className="container mx-auto max-w-6xl">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="bg-gradient-to-br from-reddy-blue to-reddy-blue/90 rounded-3xl overflow-hidden shadow-2xl"
-          >
-            <div className="grid md:grid-cols-2 gap-0">
-              {/* Video Thumbnail */}
-              <div className="relative h-64 md:h-auto bg-gray-900 group cursor-pointer">
-                <img
-                  src={featuredVideo.thumbnail}
-                  alt={featuredVideo.title}
-                  className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity duration-300"
-                  onError={(e) => {
-                    e.target.style.display = 'none'
-                  }}
-                />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-20 h-20 bg-reddy-red rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-xl">
-                    <FaPlay className="text-white text-2xl ml-1" />
+      {!loadingVideo && featuredVideo && (
+        <section className="py-16 px-6">
+          <div className="container mx-auto max-w-6xl">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="bg-gradient-to-br from-reddy-blue to-reddy-blue/90 rounded-3xl overflow-hidden shadow-2xl"
+            >
+              <div className="grid md:grid-cols-2 gap-0">
+                {/* Video Thumbnail */}
+                <div className="relative h-64 md:h-auto bg-gray-900 group cursor-pointer">
+                  <img
+                    src={featuredVideo.thumbnail}
+                    alt={featuredVideo.title}
+                    className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity duration-300"
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                    }}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-20 h-20 bg-reddy-red rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-xl">
+                      <FaPlay className="text-white text-2xl ml-1" />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Video Info */}
-              <div className="p-8 md:p-12 flex flex-col justify-center text-white">
-                <span className="text-sm font-semibold text-reddy-red bg-white px-3 py-1 rounded-full inline-block w-fit mb-4">
-                  Actualité en vidéo
-                </span>
-                <h3 className="text-2xl md:text-3xl font-bold mb-4">
-                  {featuredVideo.title}
-                </h3>
-                <p className="text-blue-100 leading-relaxed mb-6">
-                  {featuredVideo.description}
-                </p>
-                <a
-                  href={featuredVideo.videoUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-white font-semibold hover:gap-4 transition-all duration-300"
-                >
-                  Regarder la vidéo
-                  <FaArrowRight />
-                </a>
+                {/* Video Info */}
+                <div className="p-8 md:p-12 flex flex-col justify-center text-white">
+                  <span className="text-sm font-semibold text-reddy-red bg-white px-3 py-1 rounded-full inline-block w-fit mb-4">
+                    Actualité en vidéo
+                  </span>
+                  <h3 className="text-2xl md:text-3xl font-bold mb-4">
+                    {featuredVideo.title}
+                  </h3>
+                  <p className="text-blue-100 leading-relaxed mb-6">
+                    {featuredVideo.description}
+                  </p>
+                  <a
+                    href={featuredVideo.video_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-white font-semibold hover:gap-4 transition-all duration-300"
+                  >
+                    Regarder la vidéo
+                    <FaArrowRight />
+                  </a>
+                </div>
               </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+            </motion.div>
+          </div>
+        </section>
+      )}
 
       {/* Articles Grid Section */}
       <section className="py-16 px-6 bg-white/50">

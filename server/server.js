@@ -1114,6 +1114,127 @@ app.delete('/api/admin/newsletter/:id', authenticateToken, async (req, res) => {
   }
 })
 
+// ==================== ROUTES FEATURED VIDEOS ====================
+
+// Récupérer la vidéo mise en avant (public)
+app.get('/api/featured-video', async (req, res) => {
+  try {
+    const { query, params } = adaptQuery(
+      'SELECT * FROM featured_videos WHERE published = ? ORDER BY created_at DESC LIMIT 1',
+      [true]
+    )
+    const result = await pool.query(query, params)
+    const rows = extractRows(result)
+    
+    if (rows.length > 0) {
+      res.json(rows[0])
+    } else {
+      res.json(null)
+    }
+  } catch (error) {
+    console.error('Erreur récupération vidéo:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
+// Récupérer toutes les vidéos (admin)
+app.get('/api/admin/featured-videos', authenticateToken, async (req, res) => {
+  try {
+    const { query, params } = adaptQuery('SELECT * FROM featured_videos ORDER BY created_at DESC', [])
+    const result = await pool.query(query, params)
+    res.json(extractRows(result))
+  } catch (error) {
+    console.error('Erreur récupération vidéos:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
+// Créer une nouvelle vidéo (admin)
+app.post('/api/admin/featured-videos', authenticateToken, async (req, res) => {
+  try {
+    const { title, description, thumbnail, video_url, published } = req.body
+
+    const { query, params } = adaptQuery(
+      'INSERT INTO featured_videos (title, description, thumbnail, video_url, published) VALUES (?, ?, ?, ?, ?)',
+      [title, description, thumbnail || null, video_url, published || false]
+    )
+    
+    const result = await pool.query(query, params)
+    const insertId = extractInsertId(result)
+
+    res.status(201).json({
+      success: true,
+      message: 'Vidéo créée avec succès',
+      id: insertId
+    })
+  } catch (error) {
+    console.error('Erreur création vidéo:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
+// Modifier une vidéo (admin)
+app.put('/api/admin/featured-videos/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params
+    const { title, description, thumbnail, video_url, published } = req.body
+
+    const { query, params } = adaptQuery(
+      'UPDATE featured_videos SET title = ?, description = ?, thumbnail = ?, video_url = ?, published = ? WHERE id = ?',
+      [title, description, thumbnail || null, video_url, published, id]
+    )
+    
+    await pool.query(query, params)
+
+    res.json({
+      success: true,
+      message: 'Vidéo modifiée avec succès'
+    })
+  } catch (error) {
+    console.error('Erreur modification vidéo:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
+// Supprimer une vidéo (admin)
+app.delete('/api/admin/featured-videos/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const { query, params } = adaptQuery('DELETE FROM featured_videos WHERE id = ?', [id])
+    await pool.query(query, params)
+
+    res.json({ success: true, message: 'Vidéo supprimée' })
+  } catch (error) {
+    console.error('Erreur suppression vidéo:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
+// Migration pour créer la table featured_videos
+app.get('/api/admin/migrate-featured-videos', authenticateToken, async (req, res) => {
+  try {
+    const fs = await import('fs')
+    const { fileURLToPath } = await import('url')
+    const { dirname, join } = await import('path')
+    
+    const __filename = fileURLToPath(import.meta.url)
+    const __dirname = dirname(__filename)
+    
+    const isPostgres = process.env.DATABASE_URL?.startsWith('postgresql://')
+    const sqlFile = isPostgres ? 'migrations-featured-video-postgres.sql' : 'migrations-featured-video.sql'
+    const sqlPath = join(__dirname, sqlFile)
+    
+    const sql = fs.readFileSync(sqlPath, 'utf8')
+    await pool.query(sql)
+    
+    res.json({ success: true, message: 'Table featured_videos créée avec succès' })
+  } catch (error) {
+    console.error('Erreur migration featured_videos:', error)
+    res.json({ success: true, message: 'Table déjà existante ou migration effectuée' })
+  }
+})
+
 // Démarrer le serveur
 app.listen(PORT, () => {
   console.log(`🚀 Serveur démarré sur le port ${PORT}`)
