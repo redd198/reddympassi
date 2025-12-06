@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { FaUsers, FaCalendar, FaBook, FaGlobe, FaSignOutAlt, FaChartLine, FaWhatsapp, FaTrash, FaEnvelope, FaNewspaper, FaBriefcase, FaEdit, FaEye, FaBars, FaTimes, FaSyncAlt } from 'react-icons/fa'
+import { FaUsers, FaCalendar, FaBook, FaGlobe, FaSignOutAlt, FaChartLine, FaWhatsapp, FaTrash, FaEnvelope, FaNewspaper, FaBriefcase, FaEdit, FaEye, FaBars, FaTimes, FaSyncAlt, FaPlay } from 'react-icons/fa'
 
 const AdminDashboard = ({ token, onLogout }) => {
   const [stats, setStats] = useState(null)
@@ -12,6 +12,7 @@ const AdminDashboard = ({ token, onLogout }) => {
   const [newsletter, setNewsletter] = useState([])
   const [blogArticles, setBlogArticles] = useState([])
   const [opportunites, setOpportunites] = useState([])
+  const [videos, setVideos] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(true) // Menu ouvert par défaut sur desktop
@@ -22,11 +23,13 @@ const AdminDashboard = ({ token, onLogout }) => {
   const [validationCanal, setValidationCanal] = useState('whatsapp')
   const [validationMessage, setValidationMessage] = useState('')
   
-  // États pour les formulaires Blog et Opportunités
+  // États pour les formulaires Blog, Opportunités et Vidéos
   const [showBlogModal, setShowBlogModal] = useState(false)
   const [showOpportuniteModal, setShowOpportuniteModal] = useState(false)
+  const [showVideoModal, setShowVideoModal] = useState(false)
   const [editingArticle, setEditingArticle] = useState(null)
   const [editingOpportunite, setEditingOpportunite] = useState(null)
+  const [editingVideo, setEditingVideo] = useState(null)
   const [articleForm, setArticleForm] = useState({
     title: '',
     excerpt: '',
@@ -47,6 +50,13 @@ const AdminDashboard = ({ token, onLogout }) => {
     link: '',
     published: false
   })
+  const [videoForm, setVideoForm] = useState({
+    title: '',
+    description: '',
+    thumbnail: '',
+    video_url: '',
+    published: false
+  })
 
   const fetchData = async (abortController = null) => {
     try {
@@ -54,7 +64,7 @@ const AdminDashboard = ({ token, onLogout }) => {
       const headers = { 'Authorization': `Bearer ${token}` }
       const options = abortController ? { headers, signal: abortController.signal } : { headers }
       
-      const [statsRes, leadsRes, reservationsRes, commandesRes, visitorsRes, newsletterRes, blogRes, opportunitesRes] = await Promise.all([
+      const [statsRes, leadsRes, reservationsRes, commandesRes, visitorsRes, newsletterRes, blogRes, opportunitesRes, videosRes] = await Promise.all([
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/stats`, options),
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/leads`, options),
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/reservations`, options),
@@ -62,7 +72,8 @@ const AdminDashboard = ({ token, onLogout }) => {
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/visitors`, options),
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/newsletter`, options),
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/blog/articles`, options),
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/emploi/opportunites`, options)
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/emploi/opportunites`, options),
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/featured-videos`, options)
       ])
 
       console.log('✅ Requêtes terminées')
@@ -75,6 +86,7 @@ const AdminDashboard = ({ token, onLogout }) => {
       setNewsletter(await newsletterRes.json())
       setBlogArticles(await blogRes.json())
       setOpportunites(await opportunitesRes.json())
+      setVideos(await videosRes.json())
       
       console.log('✅ Données chargées')
     } catch (error) {
@@ -325,6 +337,57 @@ const AdminDashboard = ({ token, onLogout }) => {
     }
   }
 
+  // Fonctions Vidéos
+  const handleNewVideo = () => {
+    setEditingVideo(null)
+    setVideoForm({
+      title: '',
+      description: '',
+      thumbnail: '',
+      video_url: '',
+      published: false
+    })
+    setShowVideoModal(true)
+  }
+
+  const handleEditVideo = (video) => {
+    setEditingVideo(video)
+    setVideoForm(video)
+    setShowVideoModal(true)
+  }
+
+  const handleSaveVideo = async () => {
+    try {
+      const url = editingVideo
+        ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/featured-videos/${editingVideo.id}`
+        : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/featured-videos`
+      
+      const method = editingVideo ? 'PUT' : 'POST'
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(videoForm)
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        alert(`✅ Vidéo ${editingVideo ? 'modifiée' : 'créée'} avec succès`)
+        setShowVideoModal(false)
+        await fetchData()
+      } else {
+        alert('❌ Erreur lors de la sauvegarde')
+      }
+    } catch (error) {
+      console.error('Erreur:', error)
+      alert('❌ Erreur lors de la sauvegarde')
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -371,6 +434,7 @@ const AdminDashboard = ({ token, onLogout }) => {
     { id: 'commandes', label: 'Commandes', icon: FaBook },
     { id: 'blog', label: 'Blog', icon: FaNewspaper },
     { id: 'opportunites', label: 'Opportunités IT', icon: FaBriefcase },
+    { id: 'videos', label: 'Vidéos', icon: FaPlay },
     { id: 'newsletter', label: 'Newsletter', icon: FaEnvelope },
     { id: 'visitors', label: 'Visiteurs', icon: FaGlobe }
   ]
@@ -813,6 +877,80 @@ const AdminDashboard = ({ token, onLogout }) => {
           </div>
         )}
 
+        {/* Vidéos Tab */}
+        {activeTab === 'videos' && (
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div className="p-6 border-b flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold">🎥 Vidéos Mises en Avant</h2>
+                <p className="text-gray-600">{videos.length} vidéo(s)</p>
+              </div>
+              <button 
+                onClick={handleNewVideo}
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+              >
+                + Nouvelle vidéo
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Titre</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">URL Vidéo</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {videos.map((video) => (
+                    <tr key={video.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 text-sm text-gray-900">{video.title}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        <a href={video.video_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">
+                          <FaPlay className="text-xs" />
+                          Voir la vidéo
+                        </a>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          video.published 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {video.published ? '✓ Publié' : '○ Brouillon'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {new Date(video.created_at).toLocaleDateString('fr-FR')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEditVideo(video)}
+                            className="text-blue-600 hover:text-blue-800 transition-colors p-2"
+                            title="Modifier"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            onClick={() => handleDelete('featured-videos', video.id)}
+                            className="text-red-600 hover:text-red-800 transition-colors p-2"
+                            title="Supprimer"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* Newsletter Tab */}
         {activeTab === 'newsletter' && (
           <DataTable
@@ -1238,6 +1376,109 @@ const AdminDashboard = ({ token, onLogout }) => {
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 {editingOpportunite ? 'Modifier' : 'Créer'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Modal Vidéo */}
+      {showVideoModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-xl shadow-2xl max-w-2xl w-full my-8"
+          >
+            <div className="p-6 border-b">
+              <h3 className="text-2xl font-bold">
+                {editingVideo ? 'Modifier la vidéo' : 'Nouvelle vidéo'}
+              </h3>
+            </div>
+
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+              <div>
+                <label className="block text-sm font-semibold mb-2">Titre *</label>
+                <input
+                  type="text"
+                  value={videoForm.title}
+                  onChange={(e) => setVideoForm({...videoForm, title: e.target.value})}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Titre de la vidéo"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">Description *</label>
+                <textarea
+                  value={videoForm.description}
+                  onChange={(e) => setVideoForm({...videoForm, description: e.target.value})}
+                  rows={5}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Description de la vidéo"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">URL de la vidéo (YouTube) *</label>
+                <input
+                  type="url"
+                  value={videoForm.video_url}
+                  onChange={(e) => setVideoForm({...videoForm, video_url: e.target.value})}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Copiez l'URL complète de la vidéo YouTube
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">URL de la miniature (optionnel)</label>
+                <input
+                  type="text"
+                  value={videoForm.thumbnail}
+                  onChange={(e) => setVideoForm({...videoForm, thumbnail: e.target.value})}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="/blog/video-thumbnail.jpg"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Chemin vers l'image de miniature (ex: /blog/video.jpg)
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="published-video"
+                  checked={videoForm.published}
+                  onChange={(e) => setVideoForm({...videoForm, published: e.target.checked})}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="published-video" className="text-sm font-semibold">
+                  Publier immédiatement
+                </label>
+              </div>
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <p className="text-sm text-yellow-800">
+                  ⚠️ <strong>Note :</strong> Une seule vidéo peut être publiée à la fois. Si vous publiez cette vidéo, elle remplacera la vidéo actuellement affichée sur la page Blog.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-6 border-t flex gap-3 justify-end">
+              <button
+                onClick={() => setShowVideoModal(false)}
+                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSaveVideo}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                {editingVideo ? 'Modifier' : 'Créer'}
               </button>
             </div>
           </motion.div>
