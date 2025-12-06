@@ -1,11 +1,13 @@
 import { motion } from 'framer-motion'
-import { FaLinkedin, FaYoutube, FaWhatsapp, FaArrowRight, FaPlay, FaCalendarAlt, FaClock, FaEnvelope } from 'react-icons/fa'
+import { FaLinkedin, FaYoutube, FaWhatsapp, FaArrowRight, FaPlay, FaCalendarAlt, FaClock, FaEnvelope, FaBriefcase, FaMapMarkerAlt, FaExternalLinkAlt } from 'react-icons/fa'
 import { useState, useEffect } from 'react'
 import Navbar from './Navbar'
 
 const BlogPage = () => {
   const [articles, setArticles] = useState([])
+  const [opportunites, setOpportunites] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadingOpportunites, setLoadingOpportunites] = useState(true)
   const [newsletterEmail, setNewsletterEmail] = useState('')
   const [newsletterWhatsapp, setNewsletterWhatsapp] = useState('')
   const [newsletterType, setNewsletterType] = useState('email') // 'email' ou 'whatsapp'
@@ -25,6 +27,22 @@ const BlogPage = () => {
       }
     }
     fetchArticles()
+  }, [])
+
+  // Charger les opportunités IT depuis l'API
+  useEffect(() => {
+    const fetchOpportunites = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/emploi/opportunites`)
+        const data = await response.json()
+        setOpportunites(data)
+      } catch (error) {
+        console.error('Erreur chargement opportunités:', error)
+      } finally {
+        setLoadingOpportunites(false)
+      }
+    }
+    fetchOpportunites()
   }, [])
 
   const handleNewsletterSubmit = async (e) => {
@@ -291,8 +309,161 @@ const BlogPage = () => {
         </div>
       </section>
 
+      {/* Opportunités IT Section */}
+      <section className="py-16 px-6 bg-gradient-to-br from-purple-50 to-blue-50">
+        <div className="container mx-auto max-w-6xl">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-3xl md:text-4xl font-bold text-center text-reddy-blue mb-4"
+          >
+            💼 Opportunités d'Emploi IT
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-center text-gray-600 mb-12"
+          >
+            Découvrez les dernières offres d'emploi dans le secteur IT
+          </motion.p>
+
+          {loadingOpportunites ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto"></div>
+              <p className="text-gray-600 mt-4">Chargement des opportunités...</p>
+            </div>
+          ) : opportunites.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-600 text-xl">Aucune opportunité disponible pour le moment.</p>
+              <p className="text-gray-500 mt-2">Revenez bientôt pour découvrir de nouvelles offres !</p>
+            </div>
+          ) : (
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-50px" }}
+              className="grid md:grid-cols-2 gap-6"
+            >
+              {opportunites.map((opp) => (
+                <motion.div
+                  key={opp.id}
+                  variants={cardVariants}
+                  whileHover={{ y: -5, transition: { duration: 0.3 } }}
+                  className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border-l-4 border-purple-600"
+                >
+                  <div className="p-6">
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-gray-800 mb-2">
+                          {opp.title}
+                        </h3>
+                        <p className="text-lg text-purple-600 font-semibold mb-1">
+                          {opp.company}
+                        </p>
+                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <span className="flex items-center gap-1">
+                            <FaMapMarkerAlt className="text-purple-600" />
+                            {opp.location}
+                          </span>
+                          <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs font-semibold">
+                            {opp.type}
+                          </span>
+                        </div>
+                      </div>
+                      <FaBriefcase className="text-4xl text-purple-600 opacity-20" />
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-gray-700 leading-relaxed mb-4 line-clamp-3">
+                      {opp.description}
+                    </p>
+
+                    {/* Compétences */}
+                    {opp.requirements && (
+                      <div className="mb-4">
+                        <p className="text-sm font-semibold text-gray-700 mb-2">Compétences requises :</p>
+                        <p className="text-sm text-gray-600">{opp.requirements}</p>
+                      </div>
+                    )}
+
+                    {/* Salaire */}
+                    {opp.salary && (
+                      <div className="mb-4">
+                        <p className="text-sm font-semibold text-gray-700">
+                          💰 Salaire : <span className="text-green-600">{opp.salary}</span>
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Bouton Postuler */}
+                    {opp.link ? (
+                      <a
+                        href={opp.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors duration-300"
+                      >
+                        Postuler maintenant
+                        <FaExternalLinkAlt />
+                      </a>
+                    ) : (
+                      <a
+                        href={`https://wa.me/242050416661?text=Bonjour, je suis intéressé(e) par l'offre : ${encodeURIComponent(opp.title)} chez ${encodeURIComponent(opp.company)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors duration-300"
+                      >
+                        <FaWhatsapp />
+                        Postuler via WhatsApp
+                      </a>
+                    )}
+
+                    {/* Date de publication */}
+                    <p className="text-xs text-gray-500 mt-4">
+                      Publié le {new Date(opp.created_at).toLocaleDateString('fr-FR')}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+
+          {/* CTA Newsletter Emploi */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="mt-12 text-center bg-white rounded-2xl shadow-lg p-8"
+          >
+            <h3 className="text-2xl font-bold text-gray-800 mb-3">
+              🔔 Recevez les nouvelles opportunités
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Inscrivez-vous à notre newsletter pour être alerté des nouvelles offres d'emploi IT
+            </p>
+            <button
+              onClick={() => {
+                setNewsletterType('whatsapp')
+                document.querySelector('#newsletter-section')?.scrollIntoView({ behavior: 'smooth' })
+              }}
+              className="inline-flex items-center gap-2 bg-purple-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-purple-700 transition-colors duration-300"
+            >
+              <FaWhatsapp />
+              S'inscrire à la newsletter
+            </button>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Newsletter Section */}
-      <section className="py-16 px-6 bg-gradient-to-br from-reddy-blue/10 to-reddy-red/10">
+      <section id="newsletter-section" className="py-16 px-6 bg-gradient-to-br from-reddy-blue/10 to-reddy-red/10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
