@@ -433,32 +433,6 @@ const BlogPage = () => {
               ))}
             </motion.div>
           )}
-
-          {/* CTA Newsletter Emploi */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="mt-12 text-center bg-white rounded-2xl shadow-lg p-8"
-          >
-            <h3 className="text-2xl font-bold text-gray-800 mb-3">
-              🔔 Recevez les nouvelles opportunités
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Inscrivez-vous à notre newsletter pour être alerté des nouvelles offres d'emploi IT
-            </p>
-            <button
-              onClick={() => {
-                setNewsletterType('whatsapp')
-                document.querySelector('#newsletter-section')?.scrollIntoView({ behavior: 'smooth' })
-              }}
-              className="inline-flex items-center gap-2 bg-purple-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-purple-700 transition-colors duration-300"
-            >
-              <FaWhatsapp />
-              S'inscrire à la newsletter
-            </button>
-          </motion.div>
         </div>
       </section>
 
