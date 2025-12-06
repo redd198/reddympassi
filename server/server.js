@@ -1152,15 +1152,28 @@ app.get('/api/admin/featured-videos', authenticateToken, async (req, res) => {
 // Créer une nouvelle vidéo (admin)
 app.post('/api/admin/featured-videos', authenticateToken, async (req, res) => {
   try {
+    console.log('📥 Création vidéo - Body:', req.body)
     const { title, description, thumbnail, video_url, published } = req.body
+
+    if (!title || !description || !video_url) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Titre, description et URL vidéo sont requis' 
+      })
+    }
 
     const { query, params } = adaptQuery(
       'INSERT INTO featured_videos (title, description, thumbnail, video_url, published) VALUES (?, ?, ?, ?, ?)',
       [title, description, thumbnail || null, video_url, published || false]
     )
     
+    console.log('📤 Query:', query)
+    console.log('📤 Params:', params)
+    
     const result = await pool.query(query, params)
     const insertId = extractInsertId(result)
+
+    console.log('✅ Vidéo créée, ID:', insertId)
 
     res.status(201).json({
       success: true,
@@ -1168,8 +1181,11 @@ app.post('/api/admin/featured-videos', authenticateToken, async (req, res) => {
       id: insertId
     })
   } catch (error) {
-    console.error('Erreur création vidéo:', error)
-    res.status(500).json({ error: 'Erreur serveur' })
+    console.error('❌ Erreur création vidéo:', error)
+    res.status(500).json({ 
+      success: false,
+      error: error.message || 'Erreur serveur' 
+    })
   }
 })
 

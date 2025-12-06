@@ -360,6 +360,8 @@ const AdminDashboard = ({ token, onLogout }) => {
 
   const handleSaveVideo = async () => {
     try {
+      console.log('📤 Envoi vidéo:', videoForm)
+      
       const url = editingVideo
         ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/featured-videos/${editingVideo.id}`
         : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/featured-videos`
@@ -375,18 +377,20 @@ const AdminDashboard = ({ token, onLogout }) => {
         body: JSON.stringify(videoForm)
       })
 
+      console.log('📥 Réponse status:', response.status)
       const data = await response.json()
+      console.log('📥 Réponse data:', data)
 
       if (data.success) {
         alert(`✅ Vidéo ${editingVideo ? 'modifiée' : 'créée'} avec succès`)
         setShowVideoModal(false)
         await fetchData()
       } else {
-        alert('❌ Erreur lors de la sauvegarde')
+        alert(`❌ Erreur lors de la sauvegarde: ${data.error || data.message || 'Erreur inconnue'}`)
       }
     } catch (error) {
-      console.error('Erreur:', error)
-      alert('❌ Erreur lors de la sauvegarde')
+      console.error('❌ Erreur catch:', error)
+      alert(`❌ Erreur lors de la sauvegarde: ${error.message}`)
     }
   }
 
