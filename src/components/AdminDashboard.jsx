@@ -27,6 +27,8 @@ const AdminDashboard = ({ token, onLogout }) => {
   const [showBlogModal, setShowBlogModal] = useState(false)
   const [showOpportuniteModal, setShowOpportuniteModal] = useState(false)
   const [showVideoModal, setShowVideoModal] = useState(false)
+  const [showLeadModal, setShowLeadModal] = useState(false)
+  const [selectedLead, setSelectedLead] = useState(null)
   const [editingArticle, setEditingArticle] = useState(null)
   const [editingOpportunite, setEditingOpportunite] = useState(null)
   const [editingVideo, setEditingVideo] = useState(null)
@@ -575,32 +577,87 @@ const AdminDashboard = ({ token, onLogout }) => {
 
         {/* Leads Tab */}
         {activeTab === 'leads' && (
-          <DataTable
-            title="📋 Liste des Leads"
-            data={leads}
-            columns={[
-              { key: 'prenom', label: 'Prénom' },
-              { key: 'email', label: 'Email' },
-              { key: 'whatsapp', label: 'WhatsApp' },
-              { key: 'source', label: 'Source' },
-              { key: 'produit', label: 'Produit' },
-              { key: 'statut', label: 'Statut' },
-              { key: 'created_at', label: 'Date', format: (val) => new Date(val).toLocaleDateString('fr-FR') },
-              { 
-                key: 'actions', 
-                label: 'Actions', 
-                format: (val, row) => (
-                  <button
-                    onClick={() => handleDelete('leads', row.id)}
-                    className="text-red-600 hover:text-red-800 transition-colors"
-                    title="Supprimer ce lead"
-                  >
-                    <FaTrash />
-                  </button>
-                )
-              }
-            ]}
-          />
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div className="p-6 border-b">
+              <h2 className="text-2xl font-bold">📋 Liste des Leads</h2>
+              <p className="text-gray-600">{leads.length} entrée(s)</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {leads.map((lead) => (
+                    <tr key={lead.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <button
+                          onClick={() => {
+                            setSelectedLead(lead)
+                            setShowLeadModal(true)
+                          }}
+                          className="text-blue-600 hover:text-blue-800 font-semibold hover:underline text-left"
+                        >
+                          {lead.prenom}
+                        </button>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm">
+                          <div className="text-gray-900">{lead.email}</div>
+                          <div className="text-gray-500">{lead.whatsapp}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                          {lead.source}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                          lead.statut === 'converti' ? 'bg-green-100 text-green-800' :
+                          lead.statut === 'en_cours' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {lead.statut || 'nouveau'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(lead.created_at).toLocaleDateString('fr-FR')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedLead(lead)
+                              setShowLeadModal(true)
+                            }}
+                            className="text-blue-600 hover:text-blue-800 transition-colors p-2"
+                            title="Voir les détails"
+                          >
+                            <FaEye />
+                          </button>
+                          <button
+                            onClick={() => handleDelete('leads', lead.id)}
+                            className="text-red-600 hover:text-red-800 transition-colors p-2"
+                            title="Supprimer ce lead"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
 
         {/* Reservations Tab */}
@@ -1479,6 +1536,125 @@ const AdminDashboard = ({ token, onLogout }) => {
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 {editingVideo ? 'Modifier' : 'Créer'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Modal Détails Lead */}
+      {showLeadModal && selectedLead && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-xl shadow-2xl max-w-2xl w-full"
+          >
+            <div className="p-6 border-b bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-xl">
+              <h3 className="text-2xl font-bold">📋 Détails du Lead</h3>
+              <p className="text-blue-100 text-sm mt-1">
+                Ajouté le {new Date(selectedLead.created_at).toLocaleDateString('fr-FR')} à {new Date(selectedLead.created_at).toLocaleTimeString('fr-FR')}
+              </p>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Informations Personnelles */}
+              <div>
+                <h4 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <FaUsers className="text-blue-600" />
+                  Informations Personnelles
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Prénom</p>
+                    <p className="text-gray-900 font-semibold">{selectedLead.prenom}</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Email</p>
+                    <p className="text-gray-900">{selectedLead.email}</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">WhatsApp</p>
+                    <p className="text-gray-900">{selectedLead.whatsapp}</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Préférence</p>
+                    <p className="text-gray-900 capitalize">{selectedLead.preference || 'Non spécifié'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Informations Lead */}
+              <div>
+                <h4 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <FaBook className="text-green-600" />
+                  Informations Lead
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Source</p>
+                    <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
+                      {selectedLead.source}
+                    </span>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Statut</p>
+                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
+                      selectedLead.statut === 'converti' ? 'bg-green-100 text-green-800' :
+                      selectedLead.statut === 'en_cours' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {selectedLead.statut || 'nouveau'}
+                    </span>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg col-span-2">
+                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Produit d'intérêt</p>
+                    <p className="text-gray-900 font-semibold">{selectedLead.produit}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions Rapides */}
+              <div>
+                <h4 className="text-lg font-bold text-gray-800 mb-4">Actions Rapides</h4>
+                <div className="flex gap-3">
+                  <a
+                    href={`mailto:${selectedLead.email}`}
+                    className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                  >
+                    <FaEnvelope />
+                    Envoyer un email
+                  </a>
+                  <a
+                    href={`https://wa.me/${selectedLead.whatsapp.replace(/[^0-9]/g, '')}?text=Bonjour ${selectedLead.prenom}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                  >
+                    <FaWhatsapp />
+                    Contacter sur WhatsApp
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t bg-gray-50 rounded-b-xl flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  if (window.confirm('Êtes-vous sûr de vouloir supprimer ce lead ?')) {
+                    handleDelete('leads', selectedLead.id)
+                    setShowLeadModal(false)
+                  }
+                }}
+                className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-semibold"
+              >
+                Supprimer
+              </button>
+              <button
+                onClick={() => setShowLeadModal(false)}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+              >
+                Fermer
               </button>
             </div>
           </motion.div>
