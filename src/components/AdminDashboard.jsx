@@ -13,6 +13,7 @@ const AdminDashboard = ({ token, onLogout }) => {
   const [blogArticles, setBlogArticles] = useState([])
   const [opportunites, setOpportunites] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(true) // Menu ouvert par défaut sur desktop
   const [showValidationModal, setShowValidationModal] = useState(false)
   const [selectedCommande, setSelectedCommande] = useState(null)
@@ -49,6 +50,7 @@ const AdminDashboard = ({ token, onLogout }) => {
 
   const fetchData = async (abortController = null) => {
     try {
+      console.log('🔄 Début fetchData...')
       const headers = { 'Authorization': `Bearer ${token}` }
       const options = abortController ? { headers, signal: abortController.signal } : { headers }
       
@@ -63,6 +65,8 @@ const AdminDashboard = ({ token, onLogout }) => {
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/emploi/opportunites`, options)
       ])
 
+      console.log('✅ Requêtes terminées')
+      
       setStats(await statsRes.json())
       setLeads(await leadsRes.json())
       setReservations(await reservationsRes.json())
@@ -71,9 +75,12 @@ const AdminDashboard = ({ token, onLogout }) => {
       setNewsletter(await newsletterRes.json())
       setBlogArticles(await blogRes.json())
       setOpportunites(await opportunitesRes.json())
+      
+      console.log('✅ Données chargées')
     } catch (error) {
       if (error.name !== 'AbortError') {
-        console.error('Erreur:', error)
+        console.error('❌ Erreur fetchData:', error)
+        setError(error.message)
       }
     } finally {
       setLoading(false)
@@ -81,21 +88,33 @@ const AdminDashboard = ({ token, onLogout }) => {
   }
 
   useEffect(() => {
+    console.log('🚀 AdminDashboard mounted')
+    let mounted = true
     const abortController = new AbortController()
-    fetchData(abortController)
+    
+    if (mounted) {
+      fetchData(abortController)
+    }
     
     // Auto-refresh toutes les 2 minutes (au lieu de 30 secondes)
     // Réduit la charge mémoire et évite l'écran blanc
     const interval = setInterval(() => {
-      fetchData()
+      if (mounted) {
+        fetchData()
+      }
     }, 120000) // 2 minutes
     
     // Timeout de sécurité : rafraîchir la page après 10 minutes
     const timeout = setTimeout(() => {
-      window.location.reload()
+      if (mounted) {
+        console.log('⏰ Timeout 10min - Reload page')
+        window.location.reload()
+      }
     }, 600000) // 10 minutes
     
     return () => {
+      console.log('🛑 AdminDashboard unmounting')
+      mounted = false
       abortController.abort()
       clearInterval(interval)
       clearTimeout(timeout)
@@ -309,7 +328,38 @@ const AdminDashboard = ({ token, onLogout }) => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement du dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
+        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Erreur de chargement</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={() => {
+              setError(null)
+              setLoading(true)
+              fetchData()
+            }}
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Réessayer
+          </button>
+          <button
+            onClick={onLogout}
+            className="ml-4 bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-colors"
+          >
+            Déconnexion
+          </button>
+        </div>
       </div>
     )
   }
