@@ -265,9 +265,12 @@ app.post('/api/newsletter', async (req, res) => {
     const subscriptionType = type || 'email'
     console.log('📝 Type:', subscriptionType, 'Email:', email, 'WhatsApp:', whatsapp)
 
+    // Si WhatsApp uniquement, mettre un email placeholder
+    const emailValue = email || (whatsapp ? `whatsapp_${Date.now()}@placeholder.com` : null)
+    
     const { query, params } = adaptQuery(
       'INSERT INTO newsletter (email, whatsapp, type) VALUES (?, ?, ?)',
-      [email || null, whatsapp || null, subscriptionType]
+      [emailValue, whatsapp || null, subscriptionType]
     )
     
     console.log('📤 Query:', query)
