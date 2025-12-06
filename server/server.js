@@ -254,21 +254,28 @@ app.post('/api/leads', async (req, res) => {
 // Route pour l'inscription à la newsletter (Email ou WhatsApp)
 app.post('/api/newsletter', async (req, res) => {
   try {
+    console.log('📥 Newsletter - Body:', req.body)
     const { email, whatsapp, type } = req.body // type: 'email' ou 'whatsapp' ou 'emploi'
 
     if (!email && !whatsapp) {
+      console.log('❌ Email ou WhatsApp manquant')
       return res.status(400).json({ error: 'Email ou WhatsApp requis' })
     }
 
     const subscriptionType = type || 'email'
+    console.log('📝 Type:', subscriptionType, 'Email:', email, 'WhatsApp:', whatsapp)
 
     const { query, params } = adaptQuery(
       'INSERT INTO newsletter (email, whatsapp, type) VALUES (?, ?, ?)',
       [email || null, whatsapp || null, subscriptionType]
     )
     
+    console.log('📤 Query:', query)
+    console.log('📤 Params:', params)
+    
     await pool.query(query, params)
 
+    console.log('✅ Inscription newsletter réussie')
     res.status(201).json({
       success: true,
       message: 'Inscription réussie'
@@ -276,10 +283,11 @@ app.post('/api/newsletter', async (req, res) => {
   } catch (error) {
     // PostgreSQL utilise '23505' pour duplicate key, MySQL utilise 'ER_DUP_ENTRY'
     if (error.code === 'ER_DUP_ENTRY' || error.code === '23505') {
+      console.log('⚠️ Déjà inscrit')
       return res.status(400).json({ error: 'Vous êtes déjà inscrit' })
     }
-    console.error('Erreur lors de l\'inscription:', error)
-    res.status(500).json({ error: 'Erreur serveur' })
+    console.error('❌ Erreur lors de l\'inscription newsletter:', error)
+    res.status(500).json({ error: `Erreur serveur: ${error.message}` })
   }
 })
 

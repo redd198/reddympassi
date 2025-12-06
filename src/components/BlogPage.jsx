@@ -72,6 +72,8 @@ const BlogPage = () => {
       whatsapp: newsletterType === 'whatsapp' ? newsletterWhatsapp : null
     }
     
+    console.log('📤 Envoi newsletter:', payload)
+    
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/newsletter`, {
         method: 'POST',
@@ -81,22 +83,25 @@ const BlogPage = () => {
         body: JSON.stringify(payload)
       })
 
+      console.log('📥 Réponse status:', response.status)
       const data = await response.json()
+      console.log('📥 Réponse data:', data)
 
       if (response.ok) {
         setNewsletterStatus('success')
         setNewsletterEmail('')
         setNewsletterWhatsapp('')
+        alert('✅ Inscription réussie ! Merci de vous être abonné.')
         setTimeout(() => setNewsletterStatus(''), 3000)
       } else {
         setNewsletterStatus('error')
-        alert(data.error || 'Erreur lors de l\'inscription')
+        alert(`❌ ${data.error || 'Erreur lors de l\'inscription'}`)
         setTimeout(() => setNewsletterStatus(''), 3000)
       }
     } catch (error) {
-      console.error('Erreur:', error)
+      console.error('❌ Erreur catch:', error)
       setNewsletterStatus('error')
-      alert('Erreur de connexion au serveur')
+      alert(`❌ Erreur de connexion au serveur: ${error.message}`)
       setTimeout(() => setNewsletterStatus(''), 3000)
     }
   }
