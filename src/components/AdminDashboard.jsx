@@ -28,7 +28,11 @@ const AdminDashboard = ({ token, onLogout }) => {
   const [showOpportuniteModal, setShowOpportuniteModal] = useState(false)
   const [showVideoModal, setShowVideoModal] = useState(false)
   const [showLeadModal, setShowLeadModal] = useState(false)
+  const [showReservationModal, setShowReservationModal] = useState(false)
+  const [showCommandeModal, setShowCommandeModal] = useState(false)
   const [selectedLead, setSelectedLead] = useState(null)
+  const [selectedReservationDetail, setSelectedReservationDetail] = useState(null)
+  const [selectedCommandeDetail, setSelectedCommandeDetail] = useState(null)
   const [editingArticle, setEditingArticle] = useState(null)
   const [editingOpportunite, setEditingOpportunite] = useState(null)
   const [editingVideo, setEditingVideo] = useState(null)
@@ -676,22 +680,27 @@ const AdminDashboard = ({ token, onLogout }) => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">WhatsApp</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thème</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date souhaitée</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date création</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {reservations.map((reservation) => (
                     <tr key={reservation.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{reservation.nom}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{reservation.email}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{reservation.whatsapp}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{reservation.theme}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <button
+                          onClick={() => {
+                            setSelectedReservationDetail(reservation)
+                            setShowReservationModal(true)
+                          }}
+                          className="text-blue-600 hover:text-blue-800 font-semibold hover:underline text-left"
+                        >
+                          {reservation.nom}
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{reservation.theme}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {new Date(reservation.date_souhaitee).toLocaleDateString('fr-FR')}
                       </td>
@@ -704,23 +713,31 @@ const AdminDashboard = ({ token, onLogout }) => {
                           {reservation.statut === 'validee' ? '✓ Validée' : '⏳ En attente'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(reservation.created_at).toLocaleDateString('fr-FR')}
-                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedReservationDetail(reservation)
+                              setShowReservationModal(true)
+                            }}
+                            className="text-blue-600 hover:text-blue-800 transition-colors p-2"
+                            title="Voir les détails"
+                          >
+                            <FaEye />
+                          </button>
                           {reservation.statut !== 'validee' && (
                             <button
                               onClick={() => handleValidateReservation(reservation)}
-                              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+                              className="text-green-600 hover:text-green-800 transition-colors p-2"
+                              title="Valider"
                             >
-                              ✓ Valider
+                              ✓
                             </button>
                           )}
                           <button
                             onClick={() => handleDelete('reservations', reservation.id)}
                             className="text-red-600 hover:text-red-800 transition-colors p-2"
-                            title="Supprimer cette réservation"
+                            title="Supprimer"
                           >
                             <FaTrash />
                           </button>
@@ -746,8 +763,6 @@ const AdminDashboard = ({ token, onLogout }) => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">WhatsApp</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Livre</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
@@ -757,10 +772,18 @@ const AdminDashboard = ({ token, onLogout }) => {
                 <tbody className="divide-y divide-gray-200">
                   {commandes.map((commande) => (
                     <tr key={commande.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{commande.nom}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{commande.email}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{commande.whatsapp}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{commande.livre}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <button
+                          onClick={() => {
+                            setSelectedCommandeDetail(commande)
+                            setShowCommandeModal(true)
+                          }}
+                          className="text-blue-600 hover:text-blue-800 font-semibold hover:underline text-left"
+                        >
+                          {commande.nom}
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{commande.livre}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                           commande.statut === 'validee' 
@@ -775,18 +798,29 @@ const AdminDashboard = ({ token, onLogout }) => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedCommandeDetail(commande)
+                              setShowCommandeModal(true)
+                            }}
+                            className="text-blue-600 hover:text-blue-800 transition-colors p-2"
+                            title="Voir les détails"
+                          >
+                            <FaEye />
+                          </button>
                           {commande.statut !== 'validee' && (
                             <button
                               onClick={() => handleValidateCommande(commande)}
-                              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+                              className="text-green-600 hover:text-green-800 transition-colors p-2"
+                              title="Valider"
                             >
-                              ✓ Valider
+                              ✓
                             </button>
                           )}
                           <button
                             onClick={() => handleDelete('commandes', commande.id)}
                             className="text-red-600 hover:text-red-800 transition-colors p-2"
-                            title="Supprimer cette commande"
+                            title="Supprimer"
                           >
                             <FaTrash />
                           </button>
@@ -1683,6 +1717,218 @@ const AdminDashboard = ({ token, onLogout }) => {
               </button>
               <button
                 onClick={() => setShowLeadModal(false)}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-lg"
+              >
+                Fermer
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Modal Détails Réservation */}
+      {showReservationModal && selectedReservationDetail && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-xl shadow-2xl max-w-2xl w-full my-8 max-h-[90vh] flex flex-col"
+          >
+            <div className="p-6 border-b bg-gradient-to-r from-green-500 to-green-600 text-white rounded-t-xl flex justify-between items-start">
+              <div>
+                <h3 className="text-2xl font-bold">📅 Détails de la Réservation</h3>
+                <p className="text-green-100 text-sm mt-1">
+                  Créée le {new Date(selectedReservationDetail.created_at).toLocaleDateString('fr-FR')}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowReservationModal(false)}
+                className="text-white hover:text-gray-200 text-2xl font-bold ml-4"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-6 space-y-6 overflow-y-auto flex-1">
+              <div>
+                <h4 className="text-lg font-bold text-gray-800 mb-4">Informations Client</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Nom</p>
+                    <p className="text-gray-900 font-semibold">{selectedReservationDetail.nom}</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Email</p>
+                    <p className="text-gray-900">{selectedReservationDetail.email}</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg col-span-2">
+                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">WhatsApp</p>
+                    <p className="text-gray-900">{selectedReservationDetail.whatsapp}</p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h4 className="text-lg font-bold text-gray-800 mb-4">Détails Réservation</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg col-span-2">
+                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Thème</p>
+                    <p className="text-gray-900 font-semibold">{selectedReservationDetail.theme}</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Date souhaitée</p>
+                    <p className="text-gray-900">{new Date(selectedReservationDetail.date_souhaitee).toLocaleDateString('fr-FR')}</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Statut</p>
+                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
+                      selectedReservationDetail.statut === 'validee' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {selectedReservationDetail.statut === 'validee' ? '✓ Validée' : '⏳ En attente'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h4 className="text-lg font-bold text-gray-800 mb-4">Actions Rapides</h4>
+                <div className="flex gap-3">
+                  <a
+                    href={`mailto:${selectedReservationDetail.email}`}
+                    className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                  >
+                    <FaEnvelope />
+                    Email
+                  </a>
+                  <a
+                    href={`https://wa.me/${selectedReservationDetail.whatsapp.replace(/[^0-9]/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                  >
+                    <FaWhatsapp />
+                    WhatsApp
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 border-t bg-gray-50 rounded-b-xl flex gap-3 justify-between items-center flex-shrink-0">
+              {selectedReservationDetail.statut !== 'validee' && (
+                <button
+                  onClick={() => {
+                    handleValidateReservation(selectedReservationDetail)
+                    setShowReservationModal(false)
+                  }}
+                  className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold"
+                >
+                  ✓ Valider
+                </button>
+              )}
+              <button
+                onClick={() => setShowReservationModal(false)}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-lg"
+              >
+                Fermer
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Modal Détails Commande */}
+      {showCommandeModal && selectedCommandeDetail && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-xl shadow-2xl max-w-2xl w-full my-8 max-h-[90vh] flex flex-col"
+          >
+            <div className="p-6 border-b bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-t-xl flex justify-between items-start">
+              <div>
+                <h3 className="text-2xl font-bold">📚 Détails de la Commande</h3>
+                <p className="text-purple-100 text-sm mt-1">
+                  Créée le {new Date(selectedCommandeDetail.created_at).toLocaleDateString('fr-FR')}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowCommandeModal(false)}
+                className="text-white hover:text-gray-200 text-2xl font-bold ml-4"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-6 space-y-6 overflow-y-auto flex-1">
+              <div>
+                <h4 className="text-lg font-bold text-gray-800 mb-4">Informations Client</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Nom</p>
+                    <p className="text-gray-900 font-semibold">{selectedCommandeDetail.nom}</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Email</p>
+                    <p className="text-gray-900">{selectedCommandeDetail.email}</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg col-span-2">
+                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">WhatsApp</p>
+                    <p className="text-gray-900">{selectedCommandeDetail.whatsapp}</p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h4 className="text-lg font-bold text-gray-800 mb-4">Détails Commande</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg col-span-2">
+                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Livre</p>
+                    <p className="text-gray-900 font-semibold">{selectedCommandeDetail.livre}</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Statut</p>
+                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
+                      selectedCommandeDetail.statut === 'validee' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {selectedCommandeDetail.statut === 'validee' ? '✓ Validée' : '⏳ En attente'}
+                    </span>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Date</p>
+                    <p className="text-gray-900">{new Date(selectedCommandeDetail.created_at).toLocaleDateString('fr-FR')}</p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h4 className="text-lg font-bold text-gray-800 mb-4">Actions Rapides</h4>
+                <div className="flex gap-3">
+                  <a
+                    href={`mailto:${selectedCommandeDetail.email}`}
+                    className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                  >
+                    <FaEnvelope />
+                    Email
+                  </a>
+                  <a
+                    href={`https://wa.me/${selectedCommandeDetail.whatsapp.replace(/[^0-9]/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                  >
+                    <FaWhatsapp />
+                    WhatsApp
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 border-t bg-gray-50 rounded-b-xl flex gap-3 justify-between items-center flex-shrink-0">
+              {selectedCommandeDetail.statut !== 'validee' && (
+                <button
+                  onClick={() => {
+                    handleValidateCommande(selectedCommandeDetail)
+                    setShowCommandeModal(false)
+                  }}
+                  className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold"
+                >
+                  ✓ Valider
+                </button>
+              )}
+              <button
+                onClick={() => setShowCommandeModal(false)}
                 className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-lg"
               >
                 Fermer
