@@ -1566,20 +1566,29 @@ const AdminDashboard = ({ token, onLogout }) => {
 
       {/* Modal Détails Lead */}
       {showLeadModal && selectedLead && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-xl shadow-2xl max-w-2xl w-full"
+            className="bg-white rounded-xl shadow-2xl max-w-2xl w-full my-8 max-h-[90vh] flex flex-col"
           >
-            <div className="p-6 border-b bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-xl">
-              <h3 className="text-2xl font-bold">📋 Détails du Lead</h3>
-              <p className="text-blue-100 text-sm mt-1">
-                Ajouté le {new Date(selectedLead.created_at).toLocaleDateString('fr-FR')} à {new Date(selectedLead.created_at).toLocaleTimeString('fr-FR')}
-              </p>
+            <div className="p-6 border-b bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-xl flex justify-between items-start">
+              <div>
+                <h3 className="text-2xl font-bold">📋 Détails du Lead</h3>
+                <p className="text-blue-100 text-sm mt-1">
+                  Ajouté le {new Date(selectedLead.created_at).toLocaleDateString('fr-FR')} à {new Date(selectedLead.created_at).toLocaleTimeString('fr-FR')}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowLeadModal(false)}
+                className="text-white hover:text-gray-200 text-2xl font-bold ml-4"
+                title="Fermer"
+              >
+                ×
+              </button>
             </div>
 
-            <div className="p-6 space-y-6">
+            <div className="p-6 space-y-6 overflow-y-auto flex-1">
               {/* Informations Personnelles */}
               <div>
                 <h4 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -1660,7 +1669,7 @@ const AdminDashboard = ({ token, onLogout }) => {
               </div>
             </div>
 
-            <div className="p-6 border-t bg-gray-50 rounded-b-xl flex gap-3 justify-end">
+            <div className="p-6 border-t bg-gray-50 rounded-b-xl flex gap-3 justify-between items-center flex-shrink-0">
               <button
                 onClick={() => {
                   if (window.confirm('Êtes-vous sûr de vouloir supprimer ce lead ?')) {
@@ -1674,7 +1683,7 @@ const AdminDashboard = ({ token, onLogout }) => {
               </button>
               <button
                 onClick={() => setShowLeadModal(false)}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-lg"
               >
                 Fermer
               </button>
