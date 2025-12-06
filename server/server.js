@@ -903,18 +903,19 @@ app.post('/api/admin/commandes/:id/valider', authenticateToken, async (req, res)
     )
     await pool.query(updateQuery, updateParams)
 
-    // Envoyer automatiquement le PDF par email
+    // Envoyer automatiquement le PDF par email (désactivé temporairement)
     let pdfSent = false
-    const pdfPath = `./server/pdfs/${commande.livre}.pdf`
+    // const pdfPath = `./server/pdfs/${commande.livre}.pdf`
     
-    try {
-      await sendBookPDF(commande, pdfPath)
-      pdfSent = true
-      console.log('✅ PDF envoyé par email')
-    } catch (pdfError) {
-      console.error('⚠️ Erreur envoi PDF:', pdfError.message)
-      // Continuer même si le PDF n'a pas pu être envoyé
-    }
+    // TODO: Réactiver l'envoi du PDF quand les fichiers seront ajoutés
+    // try {
+    //   await sendBookPDF(commande, pdfPath)
+    //   pdfSent = true
+    //   console.log('✅ PDF envoyé par email')
+    // } catch (pdfError) {
+    //   console.error('⚠️ Erreur envoi PDF:', pdfError.message)
+    //   // Continuer même si le PDF n'a pas pu être envoyé
+    // }
 
     // Préparer le message WhatsApp avec lien du groupe
     const whatsappGroupLink = process.env.WHATSAPP_GROUP_LINK || 'https://chat.whatsapp.com/VOTRE_LIEN'
