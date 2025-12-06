@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { FaUsers, FaCalendar, FaBook, FaGlobe, FaSignOutAlt, FaChartLine, FaWhatsapp, FaTrash, FaEnvelope, FaNewspaper, FaBriefcase, FaEdit, FaEye, FaBars, FaTimes } from 'react-icons/fa'
+import { FaUsers, FaCalendar, FaBook, FaGlobe, FaSignOutAlt, FaChartLine, FaWhatsapp, FaTrash, FaEnvelope, FaNewspaper, FaBriefcase, FaEdit, FaEye, FaBars, FaTimes, FaSyncAlt } from 'react-icons/fa'
 
 const AdminDashboard = ({ token, onLogout }) => {
   const [stats, setStats] = useState(null)
@@ -47,19 +47,20 @@ const AdminDashboard = ({ token, onLogout }) => {
     published: false
   })
 
-  const fetchData = async () => {
+  const fetchData = async (abortController = null) => {
     try {
       const headers = { 'Authorization': `Bearer ${token}` }
+      const options = abortController ? { headers, signal: abortController.signal } : { headers }
       
       const [statsRes, leadsRes, reservationsRes, commandesRes, visitorsRes, newsletterRes, blogRes, opportunitesRes] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/stats`, { headers }),
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/leads`, { headers }),
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/reservations`, { headers }),
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/commandes`, { headers }),
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/visitors`, { headers }),
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/newsletter`, { headers }),
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/blog/articles`, { headers }),
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/emploi/opportunites`, { headers })
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/stats`, options),
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/leads`, options),
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/reservations`, options),
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/commandes`, options),
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/visitors`, options),
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/newsletter`, options),
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/blog/articles`, options),
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/emploi/opportunites`, options)
       ])
 
       setStats(await statsRes.json())
@@ -71,21 +72,34 @@ const AdminDashboard = ({ token, onLogout }) => {
       setBlogArticles(await blogRes.json())
       setOpportunites(await opportunitesRes.json())
     } catch (error) {
-      console.error('Erreur:', error)
+      if (error.name !== 'AbortError') {
+        console.error('Erreur:', error)
+      }
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchData()
+    const abortController = new AbortController()
+    fetchData(abortController)
     
-    // Auto-refresh toutes les 30 secondes
+    // Auto-refresh toutes les 2 minutes (au lieu de 30 secondes)
+    // Réduit la charge mémoire et évite l'écran blanc
     const interval = setInterval(() => {
       fetchData()
-    }, 30000) // 30 secondes
+    }, 120000) // 2 minutes
     
-    return () => clearInterval(interval)
+    // Timeout de sécurité : rafraîchir la page après 10 minutes
+    const timeout = setTimeout(() => {
+      window.location.reload()
+    }, 600000) // 10 minutes
+    
+    return () => {
+      abortController.abort()
+      clearInterval(interval)
+      clearTimeout(timeout)
+    }
   }, [token])
 
   const handleValidateCommande = (commande) => {
@@ -378,16 +392,29 @@ const AdminDashboard = ({ token, onLogout }) => {
       <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'lg:ml-70' : 'ml-0'}`}>
         {/* Top Bar */}
         <div className="bg-white shadow-md sticky top-0 z-20">
-          <div className="px-6 py-4 flex items-center gap-4">
+          <div className="px-6 py-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="text-gray-600 hover:text-gray-800"
+              >
+                <FaBars size={24} />
+              </button>
+              <h1 className="text-2xl font-bold text-gray-800">
+                {menuItems.find(item => item.id === activeTab)?.label || 'Dashboard'}
+              </h1>
+            </div>
             <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="text-gray-600 hover:text-gray-800"
+              onClick={() => {
+                setLoading(true)
+                fetchData()
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              title="Rafraîchir les données"
             >
-              <FaBars size={24} />
+              <FaSyncAlt />
+              <span className="hidden sm:inline">Actualiser</span>
             </button>
-            <h1 className="text-2xl font-bold text-gray-800">
-              {menuItems.find(item => item.id === activeTab)?.label || 'Dashboard'}
-            </h1>
           </div>
         </div>
 
@@ -1166,7 +1193,6 @@ const AdminDashboard = ({ token, onLogout }) => {
           </motion.div>
         </div>
       )}
-        </div>
       </div>
     </div>
   )
