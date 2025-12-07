@@ -318,13 +318,13 @@ const BlogPage = () => {
                       href={article.external_link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`inline-flex items-center gap-2 text-${color} font-semibold hover:gap-4 transition-all duration-300`}
+                      className="inline-flex items-center gap-2 text-reddy-blue hover:text-reddy-red font-semibold hover:gap-4 transition-all duration-300"
                     >
                       Lire l'article
-                      <FaArrowRight />
+                      <FaExternalLinkAlt className="text-sm" />
                     </a>
                   ) : (
-                    <button className={`inline-flex items-center gap-2 text-${color} font-semibold hover:gap-4 transition-all duration-300`}>
+                    <button className="inline-flex items-center gap-2 text-reddy-blue hover:text-reddy-red font-semibold hover:gap-4 transition-all duration-300">
                       Lire l'article
                       <FaArrowRight />
                     </button>
