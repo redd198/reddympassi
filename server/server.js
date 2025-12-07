@@ -524,16 +524,31 @@ app.post('/api/admin/blog/articles', authenticateToken, async (req, res) => {
   try {
     const { title, excerpt, content, category, image, readTime, published, external_link } = req.body
     
-    const { query, params } = adaptQuery(
-      'INSERT INTO blog_articles (title, excerpt, content, category, image, read_time, published, external_link) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [title, excerpt, content, category, image || null, readTime || '5 min', published || false, external_link || null]
-    )
+    // Essayer d'abord avec external_link
+    try {
+      const { query, params } = adaptQuery(
+        'INSERT INTO blog_articles (title, excerpt, content, category, image, read_time, published, external_link) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [title, excerpt, content, category, image || null, readTime || '5 min', published || false, external_link || null]
+      )
+      await pool.query(query, params)
+    } catch (err) {
+      // Si la colonne n'existe pas, essayer sans external_link
+      if (err.message.includes('external_link') || err.code === '42703' || err.errno === 1054) {
+        console.log('⚠️ Colonne external_link non trouvée, insertion sans ce champ')
+        const { query, params } = adaptQuery(
+          'INSERT INTO blog_articles (title, excerpt, content, category, image, read_time, published) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [title, excerpt, content, category, image || null, readTime || '5 min', published || false]
+        )
+        await pool.query(query, params)
+      } else {
+        throw err
+      }
+    }
     
-    await pool.query(query, params)
     res.status(201).json({ success: true, message: 'Article créé' })
   } catch (error) {
-    console.error('Erreur création article:', error)
-    res.status(500).json({ error: 'Erreur serveur' })
+    console.error('❌ Erreur création article:', error)
+    res.status(500).json({ error: 'Erreur serveur', details: error.message })
   }
 })
 
@@ -543,16 +558,31 @@ app.put('/api/admin/blog/articles/:id', authenticateToken, async (req, res) => {
     const { id } = req.params
     const { title, excerpt, content, category, image, readTime, published, external_link } = req.body
     
-    const { query, params } = adaptQuery(
-      'UPDATE blog_articles SET title = ?, excerpt = ?, content = ?, category = ?, image = ?, read_time = ?, published = ?, external_link = ? WHERE id = ?',
-      [title, excerpt, content, category, image, readTime, published, external_link, id]
-    )
+    // Essayer d'abord avec external_link
+    try {
+      const { query, params } = adaptQuery(
+        'UPDATE blog_articles SET title = ?, excerpt = ?, content = ?, category = ?, image = ?, read_time = ?, published = ?, external_link = ? WHERE id = ?',
+        [title, excerpt, content, category, image, readTime, published, external_link || null, id]
+      )
+      await pool.query(query, params)
+    } catch (err) {
+      // Si la colonne n'existe pas, essayer sans external_link
+      if (err.message.includes('external_link') || err.code === '42703' || err.errno === 1054) {
+        console.log('⚠️ Colonne external_link non trouvée, mise à jour sans ce champ')
+        const { query, params } = adaptQuery(
+          'UPDATE blog_articles SET title = ?, excerpt = ?, content = ?, category = ?, image = ?, read_time = ?, published = ? WHERE id = ?',
+          [title, excerpt, content, category, image, readTime, published, id]
+        )
+        await pool.query(query, params)
+      } else {
+        throw err
+      }
+    }
     
-    await pool.query(query, params)
     res.json({ success: true, message: 'Article modifié' })
   } catch (error) {
-    console.error('Erreur modification article:', error)
-    res.status(500).json({ error: 'Erreur serveur' })
+    console.error('❌ Erreur modification article:', error)
+    res.status(500).json({ error: 'Erreur serveur', details: error.message })
   }
 })
 
