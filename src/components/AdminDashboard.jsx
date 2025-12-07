@@ -294,6 +294,31 @@ const AdminDashboard = ({ token, onLogout }) => {
   }
 
   // Fonctions Opportunités
+  const handleSyncOpportunities = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/sync-opportunities`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      const data = await response.json()
+      
+      if (response.ok) {
+        alert(`✅ ${data.message}`)
+        // Recharger les opportunités
+        fetchOpportunites()
+      } else {
+        alert(`❌ Erreur: ${data.error}`)
+      }
+    } catch (error) {
+      console.error('Erreur sync opportunités:', error)
+      alert('❌ Erreur de connexion au serveur')
+    }
+  }
+
   const handleNewOpportunite = () => {
     setEditingOpportunite(null)
     setOpportuniteForm({
@@ -916,12 +941,20 @@ const AdminDashboard = ({ token, onLogout }) => {
                 <h2 className="text-2xl font-bold">💼 Opportunités d'Emploi IT</h2>
                 <p className="text-gray-600">{opportunites.length} opportunité(s)</p>
               </div>
-              <button 
-                onClick={handleNewOpportunite}
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-              >
-                + Nouvelle opportunité
-              </button>
+              <div className="flex gap-3">
+                <button 
+                  onClick={handleSyncOpportunities}
+                  className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center gap-2"
+                >
+                  🔄 Synchroniser
+                </button>
+                <button 
+                  onClick={handleNewOpportunite}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                >
+                  + Nouvelle opportunité
+                </button>
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">

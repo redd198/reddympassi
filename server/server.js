@@ -1310,6 +1310,91 @@ app.get('/api/admin/migrate-blog-external-link', authenticateToken, async (req, 
   }
 })
 
+// Synchroniser les opportunités depuis Google (simulation)
+app.post('/api/admin/sync-opportunities', authenticateToken, async (req, res) => {
+  try {
+    console.log('🔄 Synchronisation des opportunités...')
+    
+    // Simulation d'opportunités récupérées depuis Google
+    const googleOpportunities = [
+      {
+        title: 'Développeur Full Stack',
+        company: 'TechCorp Pointe-Noire',
+        location: 'Pointe-Noire, Congo',
+        type: 'CDI',
+        description: 'Nous recherchons un développeur Full Stack expérimenté pour rejoindre notre équipe dynamique. Vous travaillerez sur des projets innovants utilisant React, Node.js et MongoDB.',
+        requirements: 'React, Node.js, MongoDB, 3+ ans d\'expérience',
+        salary: '800 000 - 1 200 000 FCFA',
+        link: 'https://example.com/job1'
+      },
+      {
+        title: 'Analyste Cybersécurité',
+        company: 'SecureIT Congo',
+        location: 'Brazzaville, Congo',
+        type: 'CDI',
+        description: 'Poste d\'analyste en cybersécurité pour protéger nos infrastructures critiques. Formation en sécurité informatique requise.',
+        requirements: 'Cybersécurité, CISSP, Analyse de risques',
+        salary: '1 000 000 - 1 500 000 FCFA',
+        link: 'https://example.com/job2'
+      },
+      {
+        title: 'Chef de Projet Digital',
+        company: 'Digital Solutions',
+        location: 'Pointe-Noire, Congo',
+        type: 'CDI',
+        description: 'Pilotage de projets de transformation digitale pour nos clients. Expérience en gestion de projet et méthodologies agiles requise.',
+        requirements: 'Gestion de projet, Agile, Scrum Master',
+        salary: '1 200 000 - 1 800 000 FCFA',
+        link: 'https://example.com/job3'
+      }
+    ]
+    
+    // Supprimer les anciennes opportunités (garde seulement les 3 plus récentes)
+    const { query: deleteQuery, params: deleteParams } = adaptQuery(
+      'DELETE FROM emploi_opportunites WHERE id NOT IN (SELECT id FROM emploi_opportunites ORDER BY created_at DESC LIMIT 3)',
+      []
+    )
+    
+    try {
+      await pool.query(deleteQuery, deleteParams)
+      console.log('🗑️ Anciennes opportunités supprimées')
+    } catch (err) {
+      console.log('ℹ️ Pas d\'anciennes opportunités à supprimer')
+    }
+    
+    // Ajouter les nouvelles opportunités
+    let addedCount = 0
+    for (const opp of googleOpportunities) {
+      try {
+        const { query, params } = adaptQuery(
+          'INSERT INTO emploi_opportunites (title, company, location, type, description, requirements, salary, link) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+          [opp.title, opp.company, opp.location, opp.type, opp.description, opp.requirements, opp.salary, opp.link]
+        )
+        
+        await pool.query(query, params)
+        addedCount++
+        console.log(`✅ Opportunité ajoutée: ${opp.title}`)
+      } catch (err) {
+        console.log(`⚠️ Erreur ajout ${opp.title}:`, err.message)
+      }
+    }
+    
+    res.json({ 
+      success: true, 
+      message: `Synchronisation terminée: ${addedCount} nouvelles opportunités ajoutées`,
+      added: addedCount,
+      total: googleOpportunities.length
+    })
+    
+  } catch (error) {
+    console.error('❌ Erreur synchronisation opportunités:', error)
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    })
+  }
+})
+
 // Démarrer le serveur
 app.listen(PORT, () => {
   console.log(`🚀 Serveur démarré sur le port ${PORT}`)
