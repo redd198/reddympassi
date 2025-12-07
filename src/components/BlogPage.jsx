@@ -313,10 +313,22 @@ const BlogPage = () => {
                     {article.excerpt}
                   </p>
 
-                  <button className={`inline-flex items-center gap-2 text-${color} font-semibold hover:gap-4 transition-all duration-300`}>
-                    Lire l'article
-                    <FaArrowRight />
-                  </button>
+                  {article.external_link ? (
+                    <a
+                      href={article.external_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`inline-flex items-center gap-2 text-${color} font-semibold hover:gap-4 transition-all duration-300`}
+                    >
+                      Lire l'article
+                      <FaArrowRight />
+                    </a>
+                  ) : (
+                    <button className={`inline-flex items-center gap-2 text-${color} font-semibold hover:gap-4 transition-all duration-300`}>
+                      Lire l'article
+                      <FaArrowRight />
+                    </button>
+                  )}
                 </div>
               </motion.article>
                 )

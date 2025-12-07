@@ -43,7 +43,8 @@ const AdminDashboard = ({ token, onLogout }) => {
     category: 'Innovation',
     image: '',
     read_time: '5 min',
-    published: false
+    published: false,
+    external_link: ''
   })
   const [opportuniteForm, setOpportuniteForm] = useState({
     title: '',
@@ -245,7 +246,8 @@ const AdminDashboard = ({ token, onLogout }) => {
       category: 'Innovation',
       image: '',
       read_time: '5 min',
-      published: false
+      published: false,
+      external_link: ''
     })
     setShowBlogModal(true)
   }
@@ -1304,8 +1306,11 @@ const AdminDashboard = ({ token, onLogout }) => {
                     value={articleForm.image}
                     onChange={(e) => setArticleForm({...articleForm, image: e.target.value})}
                     className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="/blog/image.jpg"
+                    placeholder="https://images.unsplash.com/photo-..."
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    URL d'une image (Unsplash, Pexels, etc.)
+                  </p>
                 </div>
 
                 <div>
@@ -1318,6 +1323,20 @@ const AdminDashboard = ({ token, onLogout }) => {
                     placeholder="5 min"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">Lien externe (optionnel)</label>
+                <input
+                  type="url"
+                  value={articleForm.external_link}
+                  onChange={(e) => setArticleForm({...articleForm, external_link: e.target.value})}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="https://example.com/article-complet"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Si rempli, le bouton "Lire l'article" redirigera vers ce lien
+                </p>
               </div>
 
               <div className="flex items-center gap-2">

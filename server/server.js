@@ -522,11 +522,11 @@ app.get('/api/admin/blog/articles', authenticateToken, async (req, res) => {
 // Créer un article
 app.post('/api/admin/blog/articles', authenticateToken, async (req, res) => {
   try {
-    const { title, excerpt, content, category, image, readTime, published } = req.body
+    const { title, excerpt, content, category, image, readTime, published, external_link } = req.body
     
     const { query, params } = adaptQuery(
-      'INSERT INTO blog_articles (title, excerpt, content, category, image, read_time, published) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [title, excerpt, content, category, image || null, readTime || '5 min', published || false]
+      'INSERT INTO blog_articles (title, excerpt, content, category, image, read_time, published, external_link) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [title, excerpt, content, category, image || null, readTime || '5 min', published || false, external_link || null]
     )
     
     await pool.query(query, params)
@@ -541,11 +541,11 @@ app.post('/api/admin/blog/articles', authenticateToken, async (req, res) => {
 app.put('/api/admin/blog/articles/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params
-    const { title, excerpt, content, category, image, readTime, published } = req.body
+    const { title, excerpt, content, category, image, readTime, published, external_link } = req.body
     
     const { query, params } = adaptQuery(
-      'UPDATE blog_articles SET title = ?, excerpt = ?, content = ?, category = ?, image = ?, read_time = ?, published = ? WHERE id = ?',
-      [title, excerpt, content, category, image, readTime, published, id]
+      'UPDATE blog_articles SET title = ?, excerpt = ?, content = ?, category = ?, image = ?, read_time = ?, published = ?, external_link = ? WHERE id = ?',
+      [title, excerpt, content, category, image, readTime, published, external_link, id]
     )
     
     await pool.query(query, params)
@@ -1259,6 +1259,24 @@ app.get('/api/admin/migrate-featured-videos', authenticateToken, async (req, res
   } catch (error) {
     console.error('Erreur migration featured_videos:', error)
     res.json({ success: true, message: 'Table déjà existante ou migration effectuée' })
+  }
+})
+
+// Migration pour ajouter external_link aux articles
+app.get('/api/admin/migrate-blog-external-link', authenticateToken, async (req, res) => {
+  try {
+    const isPostgres = process.env.DATABASE_URL?.startsWith('postgresql://')
+    
+    if (isPostgres) {
+      await pool.query('ALTER TABLE blog_articles ADD COLUMN IF NOT EXISTS external_link VARCHAR(500)')
+    } else {
+      await pool.query('ALTER TABLE blog_articles ADD COLUMN external_link VARCHAR(500)')
+    }
+    
+    res.json({ success: true, message: 'Colonne external_link ajoutée' })
+  } catch (error) {
+    console.log('Info migration:', error.message)
+    res.json({ success: true, message: 'Colonne déjà existante ou migration effectuée' })
   }
 })
 
