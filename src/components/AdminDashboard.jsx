@@ -258,11 +258,14 @@ const AdminDashboard = ({ token, onLogout }) => {
       ...article,
       external_link: article.external_link || ''
     })
+    console.log('🔍 Article chargé:', article.title, 'external_link:', article.external_link)
     setShowBlogModal(true)
   }
 
   const handleSaveArticle = async () => {
     try {
+      console.log('💾 Sauvegarde article:', articleForm.title, 'external_link:', articleForm.external_link)
+      
       const url = editingArticle
         ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/blog/articles/${editingArticle.id}`
         : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/blog/articles`
