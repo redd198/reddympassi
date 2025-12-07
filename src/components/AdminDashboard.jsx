@@ -254,7 +254,10 @@ const AdminDashboard = ({ token, onLogout }) => {
 
   const handleEditArticle = (article) => {
     setEditingArticle(article)
-    setArticleForm(article)
+    setArticleForm({
+      ...article,
+      external_link: article.external_link || ''
+    })
     setShowBlogModal(true)
   }
 
