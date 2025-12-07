@@ -262,6 +262,23 @@ app.post('/api/newsletter', async (req, res) => {
       return res.status(400).json({ error: 'Email ou WhatsApp requis' })
     }
 
+    // Validation WhatsApp
+    if (whatsapp) {
+      const whatsappRegex = /^\+\d{1,4}\s?\d{6,15}$/
+      if (!whatsappRegex.test(whatsapp.replace(/\s/g, ''))) {
+        console.log('❌ Format WhatsApp invalide:', whatsapp)
+        return res.status(400).json({ error: 'Format WhatsApp invalide. Utilisez le format: +242 06 12 34 56 78' })
+      }
+      
+      // Vérifier les indicatifs autorisés (Afrique centrale principalement)
+      const allowedCountryCodes = ['+242', '+237', '+241', '+236', '+235', '+33', '+1', '+44']
+      const countryCode = whatsapp.split(' ')[0]
+      if (!allowedCountryCodes.includes(countryCode)) {
+        console.log('❌ Indicatif non autorisé:', countryCode)
+        return res.status(400).json({ error: 'Indicatif pays non supporté. Contactez-nous pour ajouter votre pays.' })
+      }
+    }
+
     const subscriptionType = type || 'email'
     console.log('📝 Type:', subscriptionType, 'Email:', email, 'WhatsApp:', whatsapp)
 

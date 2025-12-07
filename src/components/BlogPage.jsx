@@ -11,9 +11,10 @@ const BlogPage = () => {
   const [loadingOpportunites, setLoadingOpportunites] = useState(true)
   const [loadingVideo, setLoadingVideo] = useState(true)
   const [newsletterEmail, setNewsletterEmail] = useState('')
-  const [newsletterWhatsapp, setNewsletterWhatsapp] = useState('')
+  const [newsletterWhatsapp, setNewsletterWhatsapp] = useState('+242 ')
   const [newsletterType, setNewsletterType] = useState('email') // 'email' ou 'whatsapp'
   const [newsletterStatus, setNewsletterStatus] = useState('')
+  const [whatsappError, setWhatsappError] = useState('')
 
   // Charger les articles depuis l'API
   useEffect(() => {
@@ -521,24 +522,72 @@ const BlogPage = () => {
                 className="flex-1 px-6 py-4 rounded-lg border-2 border-gray-300 focus:border-reddy-blue focus:outline-none transition-colors duration-300"
               />
             ) : (
-              <input
-                type="tel"
-                placeholder="Votre numéro WhatsApp (+242...)"
-                value={newsletterWhatsapp}
-                onChange={(e) => setNewsletterWhatsapp(e.target.value)}
-                required
-                className="flex-1 px-6 py-4 rounded-lg border-2 border-gray-300 focus:border-green-600 focus:outline-none transition-colors duration-300"
-              />
+              <div className="flex-1 flex gap-2">
+                <select
+                  value={newsletterWhatsapp.split(' ')[0] || '+242'}
+                  onChange={(e) => {
+                    const countryCode = e.target.value
+                    const number = newsletterWhatsapp.split(' ').slice(1).join(' ')
+                    setNewsletterWhatsapp(`${countryCode} ${number}`.trim())
+                  }}
+                  className="px-4 py-4 border-2 border-gray-300 rounded-lg focus:border-green-600 focus:outline-none bg-white"
+                >
+                  <option value="+242">🇨🇬 +242 (Congo)</option>
+                  <option value="+237">🇨🇲 +237 (Cameroun)</option>
+                  <option value="+241">🇬🇦 +241 (Gabon)</option>
+                  <option value="+236">🇨🇫 +236 (RCA)</option>
+                  <option value="+235">🇹🇩 +235 (Tchad)</option>
+                  <option value="+33">🇫🇷 +33 (France)</option>
+                  <option value="+1">🇺🇸 +1 (USA/Canada)</option>
+                  <option value="+44">🇬🇧 +44 (UK)</option>
+                </select>
+                <input
+                  type="tel"
+                  placeholder="06 12 34 56 78"
+                  value={newsletterWhatsapp.split(' ').slice(1).join(' ')}
+                  onChange={(e) => {
+                    const countryCode = newsletterWhatsapp.split(' ')[0] || '+242'
+                    const number = e.target.value.replace(/[^\d\s]/g, '')
+                    const fullNumber = `${countryCode} ${number}`.trim()
+                    setNewsletterWhatsapp(fullNumber)
+                    
+                    // Validation en temps réel
+                    if (number.length > 0) {
+                      const whatsappRegex = /^\+\d{1,4}\s?\d{6,15}$/
+                      if (!whatsappRegex.test(fullNumber.replace(/\s/g, ''))) {
+                        setWhatsappError('Format invalide')
+                      } else if (number.length < 8) {
+                        setWhatsappError('Numéro trop court')
+                      } else {
+                        setWhatsappError('')
+                      }
+                    } else {
+                      setWhatsappError('')
+                    }
+                  }}
+                  required
+                  className={`flex-1 px-4 py-4 rounded-lg border-2 focus:outline-none transition-colors duration-300 ${
+                    whatsappError ? 'border-red-500 focus:border-red-600' : 'border-gray-300 focus:border-green-600'
+                  }`}
+                />
+              </div>
             )}
             <button 
               type="submit"
+              disabled={newsletterType === 'whatsapp' && whatsappError}
               className={`px-8 py-4 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ${
                 newsletterType === 'email' ? 'bg-reddy-red' : 'bg-green-600'
-              }`}
+              } ${newsletterType === 'whatsapp' && whatsappError ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {newsletterStatus === 'success' ? '✓ Inscrit !' : 'S\'abonner'}
             </button>
           </form>
+          
+          {whatsappError && newsletterType === 'whatsapp' && (
+            <p className="text-red-600 text-sm mt-2">
+              ⚠️ {whatsappError}
+            </p>
+          )}
           
           {newsletterStatus === 'success' && (
             <p className="text-green-600 font-semibold mt-4">
