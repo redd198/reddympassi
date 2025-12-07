@@ -220,7 +220,7 @@ const BooksPage = () => {
                   {/* Action Button */}
                   {book.type === 'gratuit' ? (
                     <a
-                      href="/landing/livre-gratuit"
+                      href="/landing/livre-gratuit?access=true"
                       className={`flex items-center justify-center gap-3 w-full py-4 px-6 bg-green-500 text-white font-bold text-lg rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300`}
                     >
                       <FaDownload />

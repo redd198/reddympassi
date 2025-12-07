@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { FaCheckCircle, FaDownload, FaWhatsapp, FaEnvelope, FaBook, FaStar } from 'react-icons/fa'
+import { FaCheckCircle, FaDownload, FaWhatsapp, FaEnvelope, FaBook, FaStar, FaLock } from 'react-icons/fa'
+import { useNavigate } from 'react-router-dom'
 
 const LandingLivreGratuit = () => {
+  const navigate = useNavigate()
   const [formData, setFormData] = useState({
     prenom: '',
     email: '',
@@ -12,6 +14,36 @@ const LandingLivreGratuit = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [downloadLink, setDownloadLink] = useState('')
+  const [hasAccess, setHasAccess] = useState(false)
+
+  // Vérifier l'accès à la page
+  useEffect(() => {
+    const checkAccess = () => {
+      // Vérifier si l'utilisateur vient d'une source autorisée
+      const referrer = document.referrer
+      const allowedSources = [
+        'reddympassi.site',
+        'localhost',
+        'reddympassi-api.onrender.com'
+      ]
+      
+      // Vérifier le référent ou si c'est un accès depuis le site
+      const isValidReferrer = allowedSources.some(source => referrer.includes(source))
+      const hasSessionAccess = sessionStorage.getItem('livre-gratuit-access')
+      
+      if (isValidReferrer || hasSessionAccess || window.location.search.includes('access=true')) {
+        setHasAccess(true)
+        sessionStorage.setItem('livre-gratuit-access', 'true')
+      } else {
+        // Rediriger vers l'accueil après 3 secondes
+        setTimeout(() => {
+          navigate('/')
+        }, 3000)
+      }
+    }
+    
+    checkAccess()
+  }, [navigate])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -55,6 +87,60 @@ const LandingLivreGratuit = () => {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  // Page d'accès refusé
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center px-6 py-20">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-2xl w-full bg-white rounded-2xl shadow-2xl p-8 md:p-12 text-center"
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: 'spring' }}
+            className="w-20 h-20 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-6"
+          >
+            <FaLock className="text-white text-4xl" />
+          </motion.div>
+
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+            🔒 Accès Restreint
+          </h1>
+
+          <p className="text-xl text-gray-600 mb-8">
+            Cette page est réservée aux visiteurs autorisés.
+          </p>
+
+          <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-8">
+            <h2 className="text-lg font-semibold text-blue-900 mb-4">
+              📚 Pour accéder au livre gratuit :
+            </h2>
+            <ul className="text-left text-gray-700 space-y-2">
+              <li>• Visitez notre page d'accueil</li>
+              <li>• Cliquez sur "Livre Gratuit" dans le menu</li>
+              <li>• Ou accédez via nos réseaux sociaux</li>
+            </ul>
+          </div>
+
+          <div className="space-y-4">
+            <button
+              onClick={() => navigate('/')}
+              className="inline-flex items-center gap-3 bg-gradient-to-r from-reddy-blue to-blue-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+            >
+              🏠 Retour à l'accueil
+            </button>
+            
+            <p className="text-sm text-gray-500">
+              Redirection automatique dans 3 secondes...
+            </p>
+          </div>
+        </motion.div>
+      </div>
+    )
   }
 
   if (isSuccess) {
@@ -114,14 +200,14 @@ const LandingLivreGratuit = () => {
             </div>
           </div>
 
-          <a
-            href={downloadLink}
-            download
-            className="inline-flex items-center gap-3 bg-gradient-to-r from-reddy-red to-red-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:shadow-xl transform hover:scale-105 transition-all duration-300 mb-6"
-          >
-            <FaDownload />
-            Télécharger maintenant
-          </a>
+          <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6 mb-6">
+            <h3 className="text-lg font-semibold text-green-900 mb-2">
+              📚 Votre livre vous sera envoyé
+            </h3>
+            <p className="text-green-700">
+              Le lien de téléchargement sera envoyé sur votre {formData.preference === 'whatsapp' ? 'WhatsApp' : 'email'} dans les prochaines minutes.
+            </p>
+          </div>
 
           <div className="border-t border-gray-200 pt-8 mt-8">
             <h3 className="text-xl font-bold text-gray-800 mb-4">
