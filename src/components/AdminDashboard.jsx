@@ -256,7 +256,7 @@ const AdminDashboard = ({ token, onLogout }) => {
     setEditingArticle(article)
     setArticleForm({
       ...article,
-      external_link: article.external_link || ''
+      external_link: article.external_link === undefined || article.external_link === null ? '' : article.external_link
     })
     console.log('🔍 Article chargé:', article.title, 'external_link:', article.external_link)
     setShowBlogModal(true)
