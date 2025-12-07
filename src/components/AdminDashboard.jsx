@@ -262,6 +262,47 @@ const AdminDashboard = ({ token, onLogout }) => {
     setShowBlogModal(true)
   }
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    try {
+      // Convertir en base64
+      const reader = new FileReader()
+      reader.onload = async (event) => {
+        const imageData = event.target.result
+        
+        // Envoyer au serveur
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/upload-blog-image`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            imageData: imageData,
+            fileName: file.name
+          })
+        })
+
+        const data = await response.json()
+        
+        if (data.success) {
+          // Mettre à jour le formulaire avec l'URL de l'image
+          setArticleForm({...articleForm, image: data.imageUrl})
+          alert('✅ Image uploadée avec succès !')
+        } else {
+          alert('❌ Erreur lors de l\'upload: ' + data.error)
+        }
+      }
+      
+      reader.readAsDataURL(file)
+    } catch (error) {
+      console.error('Erreur upload:', error)
+      alert('❌ Erreur lors de l\'upload')
+    }
+  }
+
   const handleSaveArticle = async () => {
     try {
       console.log('💾 Sauvegarde article:', articleForm.title, 'external_link:', articleForm.external_link)
@@ -1339,17 +1380,26 @@ const AdminDashboard = ({ token, onLogout }) => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold mb-2">URL Image</label>
+                  <label className="block text-sm font-semibold mb-2">Image de l'article</label>
                   <input
-                    type="text"
-                    value={articleForm.image}
-                    onChange={(e) => setArticleForm({...articleForm, image: e.target.value})}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
                     className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="https://images.unsplash.com/photo-..."
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    URL d'une image (Unsplash, Pexels, etc.)
+                    Sélectionnez une image depuis votre ordinateur
                   </p>
+                  {articleForm.image && (
+                    <div className="mt-2">
+                      <img 
+                        src={articleForm.image} 
+                        alt="Aperçu" 
+                        className="w-20 h-20 object-cover rounded border"
+                      />
+                      <p className="text-xs text-green-600 mt-1">✓ Image sélectionnée</p>
+                    </div>
+                  )}
                 </div>
 
                 <div>

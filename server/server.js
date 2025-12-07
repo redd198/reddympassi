@@ -3,11 +3,17 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import mysqlPool from './db.js'
 import postgresPool from './db-postgres.js'
 import { getLocationFromIP, getClientIP } from './tracking.js'
 import { sendLeadNotification, sendReservationNotification, sendCommandeNotification, sendValidationEmail, sendBookPDF } from './email.js'
 import { adaptQuery, extractRows, extractInsertId, dbType } from './db-helper.js'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 dotenv.config()
 
@@ -1441,6 +1447,47 @@ app.post('/api/admin/sync-opportunities', authenticateToken, async (req, res) =>
       success: false, 
       error: error.message 
     })
+  }
+})
+
+// Route pour upload d'images de blog
+app.post('/api/admin/upload-blog-image', authenticateToken, async (req, res) => {
+  try {
+    const { imageData, fileName } = req.body
+    
+    if (!imageData || !fileName) {
+      return res.status(400).json({ error: 'Image et nom de fichier requis' })
+    }
+    
+    // Créer le dossier uploads s'il n'existe pas
+    const uploadsDir = path.join(__dirname, '../public/uploads/blog')
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true })
+    }
+    
+    // Nettoyer le nom de fichier
+    const cleanFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_')
+    const timestamp = Date.now()
+    const finalFileName = `${timestamp}_${cleanFileName}`
+    const filePath = path.join(uploadsDir, finalFileName)
+    
+    // Convertir base64 en fichier
+    const base64Data = imageData.replace(/^data:image\/[a-z]+;base64,/, '')
+    fs.writeFileSync(filePath, base64Data, 'base64')
+    
+    // Retourner l'URL de l'image
+    const imageUrl = `/uploads/blog/${finalFileName}`
+    
+    console.log('✅ Image uploadée:', imageUrl)
+    res.json({ 
+      success: true, 
+      imageUrl: imageUrl,
+      message: 'Image uploadée avec succès'
+    })
+    
+  } catch (error) {
+    console.error('❌ Erreur upload image:', error)
+    res.status(500).json({ error: 'Erreur lors de l\'upload' })
   }
 })
 
