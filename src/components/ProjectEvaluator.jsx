@@ -301,7 +301,7 @@ const ProjectEvaluator = () => {
       <Navbar />
       
       <div className="container mx-auto px-6 py-20 max-w-4xl">
-        {!result ? (
+        {!result && currentStep < steps.length ? (
           <>
             {/* Header */}
             <motion.div
@@ -418,7 +418,7 @@ const ProjectEvaluator = () => {
               )}
             </div>
           </>
-        ) : currentStep === steps.length ? (
+        ) : !result && currentStep === steps.length ? (
           // Contact Form
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -476,7 +476,7 @@ const ProjectEvaluator = () => {
               </button>
             </div>
           </motion.div>
-        ) : (
+        ) : result ? (
           // Success Message
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -560,6 +560,10 @@ const ProjectEvaluator = () => {
               </div>
             </div>
           </motion.div>
+        ) : (
+          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+            <p className="text-gray-600">Chargement...</p>
+          </div>
         )}
       </div>
     </div>
