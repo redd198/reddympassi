@@ -7,6 +7,7 @@ import BlogPage from './components/BlogPage'
 import BookingPage from './components/BookingPage'
 import BooksPage from './components/BooksPage'
 import LandingLivreGratuit from './components/LandingLivreGratuit'
+import CalculatorsPage from './components/CalculatorsPage'
 import AdminPage from './components/AdminPage'
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/reserver" element={<BookingPage />} />
         <Route path="/livres" element={<BooksPage />} />
+        <Route path="/calculateurs" element={<CalculatorsPage />} />
         <Route path="/landing/livre-gratuit" element={<LandingLivreGratuit />} />
         <Route path="/admin" element={<AdminPage />} />
       </Routes>
