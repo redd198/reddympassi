@@ -122,7 +122,7 @@ const HomePage = () => {
                   href="/calculateurs"
                   className="px-8 py-4 bg-purple-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-out"
                 >
-                  🧮 Calculateurs gratuits
+                  🎯 Évaluer mon projet
                 </a>
                 
                 <a

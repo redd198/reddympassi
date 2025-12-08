@@ -7,7 +7,7 @@ import BlogPage from './components/BlogPage'
 import BookingPage from './components/BookingPage'
 import BooksPage from './components/BooksPage'
 import LandingLivreGratuit from './components/LandingLivreGratuit'
-import CalculatorsPage from './components/CalculatorsPage'
+import ProjectEvaluator from './components/ProjectEvaluator'
 import AffiliatePage from './components/AffiliatePage'
 import AdminPage from './components/AdminPage'
 
@@ -22,7 +22,7 @@ function App() {
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/reserver" element={<BookingPage />} />
         <Route path="/livres" element={<BooksPage />} />
-        <Route path="/calculateurs" element={<CalculatorsPage />} />
+        <Route path="/calculateurs" element={<ProjectEvaluator />} />
         <Route path="/affiliation" element={<AffiliatePage />} />
         <Route path="/landing/livre-gratuit" element={<LandingLivreGratuit />} />
         <Route path="/admin" element={<AdminPage />} />
