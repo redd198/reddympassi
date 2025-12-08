@@ -119,6 +119,13 @@ const HomePage = () => {
                 </a>
                 
                 <a
+                  href="/calculateurs"
+                  className="px-8 py-4 bg-purple-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-out"
+                >
+                  🧮 Calculateurs gratuits
+                </a>
+                
+                <a
                   href="/livres"
                   className="px-8 py-4 bg-green-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-out"
                 >
