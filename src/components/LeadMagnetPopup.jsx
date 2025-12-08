@@ -12,6 +12,7 @@ const LeadMagnetPopup = () => {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  const [countdown, setCountdown] = useState(8)
 
   useEffect(() => {
     // Vérifier si le popup a déjà été affiché
@@ -38,6 +39,18 @@ const LeadMagnetPopup = () => {
       }
     }
   }, [])
+
+  // Compte à rebours pour fermeture automatique
+  useEffect(() => {
+    if (isSuccess && countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1)
+      }, 1000)
+      return () => clearTimeout(timer)
+    } else if (isSuccess && countdown === 0) {
+      handleClose()
+    }
+  }, [isSuccess, countdown])
 
   const handleClose = () => {
     setIsVisible(false)
@@ -71,10 +84,8 @@ const LeadMagnetPopup = () => {
 
       if (response.ok) {
         setIsSuccess(true)
-        // Fermer après 3 secondes
-        setTimeout(() => {
-          handleClose()
-        }, 3000)
+        // Démarrer le compte à rebours
+        setCountdown(8)
       }
     } catch (error) {
       console.error('Erreur lors de l\'envoi:', error)
@@ -222,25 +233,82 @@ const LeadMagnetPopup = () => {
                 ) : (
                   // Étape 3: Succès
                   <div className="text-center py-4">
-                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    {/* Animation de succès */}
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", duration: 0.5 }}
+                      className="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg"
+                    >
+                      <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
-                    </div>
+                    </motion.div>
                     
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                      Parfait ! 🎉
+                    <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                      Fichier envoyé avec succès ! 🎉
                     </h3>
                     
                     <p className="text-gray-600 mb-4">
-                      Votre guide sera envoyé dans les prochaines minutes via {selectedMethod === 'whatsapp' ? 'WhatsApp' : 'Email'}.
+                      Votre guide <strong>"Économie Numérique en Afrique"</strong> sera envoyé dans les prochaines minutes via {selectedMethod === 'whatsapp' ? 'WhatsApp' : 'Email'}.
                     </p>
                     
-                    <div className="bg-blue-50 p-3 rounded-lg">
-                      <p className="text-sm text-blue-700">
-                        💡 En attendant, explorez nos formations premium et opportunités d'emploi !
+                    {/* Compte à rebours */}
+                    <div className="mb-4">
+                      <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full">
+                        <div className="w-6 h-6 bg-reddy-blue text-white rounded-full flex items-center justify-center text-sm font-bold">
+                          {countdown}
+                        </div>
+                        <span className="text-sm text-gray-600">
+                          Fermeture automatique dans {countdown}s
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* CTA Buttons */}
+                    <div className="space-y-3 mb-4">
+                      <a
+                        href="/livres"
+                        onClick={handleClose}
+                        className="block w-full py-3 bg-gradient-to-r from-reddy-blue to-reddy-red text-white font-semibold rounded-lg hover:shadow-lg transition-all duration-300"
+                      >
+                        📚 Découvrir nos livres
+                      </a>
+                      
+                      <a
+                        href="/reserver"
+                        onClick={handleClose}
+                        className="block w-full py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-all duration-300"
+                      >
+                        💼 Réserver un coaching
+                      </a>
+                      
+                      <a
+                        href="/blog"
+                        onClick={handleClose}
+                        className="block w-full py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all duration-300"
+                      >
+                        📰 Lire le blog
+                      </a>
+                    </div>
+                    
+                    {/* Bonus info */}
+                    <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-200">
+                      <p className="text-sm text-gray-700 mb-2">
+                        <strong>🎁 Bonus exclusif :</strong>
+                      </p>
+                      <p className="text-xs text-gray-600">
+                        Vous recevrez également des conseils hebdomadaires sur l'économie numérique et les opportunités en Afrique !
                       </p>
                     </div>
+                    
+                    {/* Bouton fermer manuel */}
+                    <button
+                      onClick={handleClose}
+                      className="mt-4 text-sm text-gray-500 hover:text-gray-700 underline"
+                    >
+                      Fermer maintenant
+                    </button>
                   </div>
                 )}
               </div>
