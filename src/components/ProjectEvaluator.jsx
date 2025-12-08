@@ -256,131 +256,32 @@ const ProjectEvaluator = () => {
     setAnswers({ ...answers, [questionId]: value })
   }
 
-  const calculateScore = () => {
-    let score = 0
-    let maxScore = 0
-    const feedback = {
-      forces: [],
-      faiblesses: [],
-      recommandations: []
-    }
 
-    // Évaluation Vision (25 points)
-    maxScore += 25
-    if (answers.projet_description?.length > 50) score += 7
-    if (answers.motivation?.length > 100) score += 7
-    if (answers.vision_3ans?.length > 50) score += 6
-    if (answers.objectif_principal) score += 5
-
-    if (score >= 20) {
-      feedback.forces.push('Vision claire et motivante')
-    } else {
-      feedback.faiblesses.push('Vision à clarifier davantage')
-      feedback.recommandations.push('Prenez le temps de définir précisément votre vision à long terme')
-    }
-
-    // Évaluation Contexte (25 points)
-    if (answers.probleme_resolu?.length > 50) score += 7
-    if (answers.public_cible?.length > 50) score += 7
-    if (answers.concurrence === 'Oui, je les ai identifiés') score += 6
-    else if (answers.concurrence === 'Partiellement') score += 3
-    if (answers.valeur_ajoutee?.length > 50) score += 5
-    maxScore += 25
-
-    if (answers.concurrence === 'Oui, je les ai identifiés') {
-      feedback.forces.push('Bonne connaissance du marché')
-    } else {
-      feedback.faiblesses.push('Analyse concurrentielle à approfondir')
-      feedback.recommandations.push('Étudiez vos concurrents pour mieux vous positionner')
-    }
-
-    // Évaluation Planification (25 points)
-    if (answers.etapes_definies === 'Oui, plan détaillé') score += 7
-    else if (answers.etapes_definies === 'Grandes lignes seulement') score += 4
-    if (answers.budget_estime === 'Oui, budget détaillé') score += 6
-    else if (answers.budget_estime === 'Estimation approximative') score += 3
-    if (answers.competences?.length > 50) score += 6
-    if (answers.risques_identifies === 'Oui, avec plans de mitigation') score += 6
-    else if (answers.risques_identifies === 'Quelques risques identifiés') score += 3
-    maxScore += 25
-
-    if (answers.etapes_definies === 'Oui, plan détaillé') {
-      feedback.forces.push('Planification structurée')
-    } else {
-      feedback.faiblesses.push('Planification à détailler')
-      feedback.recommandations.push('Créez un plan d\'action détaillé avec des jalons précis')
-    }
-
-    // Évaluation Exécution (15 points)
-    if (answers.indicateurs_succes?.length > 50) score += 5
-    if (answers.delai_lancement === 'Moins de 3 mois' || answers.delai_lancement === '3 à 6 mois') score += 4
-    if (answers.engagement === 'Temps plein (40h+)') score += 6
-    else if (answers.engagement === 'Mi-temps (20-40h)') score += 3
-    maxScore += 15
-
-    // Évaluation Mindset (10 points)
-    if (answers.gestion_echec === 'J\'analyserais et rebondirais') score += 4
-    if (answers.apprentissage === 'Absolument, c\'est essentiel') score += 3
-    if (answers.soutien === 'Oui, famille et mentors') score += 3
-    maxScore += 10
-
-    if (answers.apprentissage === 'Absolument, c\'est essentiel') {
-      feedback.forces.push('Excellent état d\'esprit entrepreneurial')
-    }
-
-    const percentage = Math.round((score / maxScore) * 100)
-    
-    let niveau = ''
-    let message = ''
-    let action = ''
-
-    if (percentage >= 80) {
-      niveau = 'Excellent'
-      message = 'Votre projet est très bien structuré ! Vous êtes prêt à passer à l\'action.'
-      action = 'Réservez une session de coaching pour optimiser votre lancement'
-    } else if (percentage >= 60) {
-      niveau = 'Bon'
-      message = 'Votre projet a un bon potentiel. Quelques ajustements vous permettront d\'exceller.'
-      action = 'Un accompagnement personnalisé vous aidera à combler les lacunes'
-    } else if (percentage >= 40) {
-      niveau = 'Moyen'
-      message = 'Votre projet nécessite plus de travail de préparation avant le lancement.'
-      action = 'Une formation complète en entrepreneuriat est recommandée'
-    } else {
-      niveau = 'À retravailler'
-      message = 'Votre projet est encore au stade d\'idée. Il faut le structurer davantage.'
-      action = 'Commencez par notre formation "De l\'idée au projet viable"'
-    }
-
-    return {
-      score: percentage,
-      niveau,
-      message,
-      action,
-      feedback
-    }
-  }
 
   const handleSubmit = async () => {
-    const evaluation = calculateScore()
-    setResult(evaluation)
     setIsSubmitting(true)
 
     try {
-      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/leads`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/evaluations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prenom: contactInfo.nom,
+          nom: contactInfo.nom,
           email: contactInfo.preference === 'email' ? contactInfo.email : '',
           whatsapp: contactInfo.preference === 'whatsapp' ? contactInfo.whatsapp : '',
           preference: contactInfo.preference,
-          source: 'evaluateur-projet',
-          produit: `Évaluation projet - Score: ${evaluation.score}%`
+          reponses: answers
         })
       })
+
+      if (response.ok) {
+        setResult({ success: true })
+      } else {
+        alert('Erreur lors de l\'envoi. Veuillez réessayer.')
+      }
     } catch (error) {
       console.error('Erreur:', error)
+      alert('Erreur de connexion. Veuillez réessayer.')
     } finally {
       setIsSubmitting(false)
     }
@@ -576,120 +477,85 @@ const ProjectEvaluator = () => {
             </div>
           </motion.div>
         ) : (
-          // Results
+          // Success Message
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-2xl shadow-xl p-8"
+            className="bg-white rounded-2xl shadow-xl p-12 text-center"
           >
-            <div className="text-center mb-8">
-              <div className="w-32 h-32 mx-auto mb-6 relative">
-                <svg className="transform -rotate-90 w-32 h-32">
-                  <circle
-                    cx="64"
-                    cy="64"
-                    r="56"
-                    stroke="#e5e7eb"
-                    strokeWidth="12"
-                    fill="none"
-                  />
-                  <circle
-                    cx="64"
-                    cy="64"
-                    r="56"
-                    stroke="url(#gradient)"
-                    strokeWidth="12"
-                    fill="none"
-                    strokeDasharray={`${2 * Math.PI * 56}`}
-                    strokeDashoffset={`${2 * Math.PI * 56 * (1 - result.score / 100)}`}
-                    strokeLinecap="round"
-                  />
-                  <defs>
-                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#3b82f6" />
-                      <stop offset="100%" stopColor="#ef4444" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-4xl font-bold text-gray-800">{result.score}%</span>
+            <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <FaCheckCircle className="text-6xl text-green-500" />
+            </div>
+
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">
+              Évaluation Reçue avec Succès ! 🎉
+            </h2>
+
+            <p className="text-lg text-gray-600 mb-6">
+              Merci d'avoir pris le temps de clarifier votre projet avec nous.
+            </p>
+
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-xl mb-8">
+              <h3 className="font-bold text-lg text-gray-800 mb-4">📋 Prochaines Étapes :</h3>
+              <div className="space-y-3 text-left max-w-md mx-auto">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">1️⃣</span>
+                  <p className="text-gray-700">
+                    <strong>Analyse approfondie</strong> - Notre équipe d'experts va analyser en détail votre projet
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">2️⃣</span>
+                  <p className="text-gray-700">
+                    <strong>Évaluation personnalisée</strong> - Nous calculerons votre score et identifierons vos forces et axes d'amélioration
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">3️⃣</span>
+                  <p className="text-gray-700">
+                    <strong>Rapport PDF complet</strong> - Vous recevrez un document détaillé avec recommandations et plan d'action
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">4️⃣</span>
+                  <p className="text-gray-700">
+                    <strong>Consultation offerte</strong> - Un appel de 30 minutes pour discuter de vos résultats
+                  </p>
                 </div>
               </div>
+            </div>
 
-              <h2 className="text-3xl font-bold text-gray-800 mb-2">
-                Niveau : {result.niveau}
-              </h2>
-              <p className="text-lg text-gray-600 mb-6">
-                {result.message}
+            <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4 mb-8">
+              <p className="text-sm text-yellow-800">
+                ⏱️ <strong>Délai de réponse :</strong> 24 à 48 heures ouvrées
+              </p>
+              <p className="text-sm text-yellow-800 mt-2">
+                📧 Vous recevrez votre évaluation par {contactInfo.preference === 'email' ? 'email' : 'WhatsApp'}
               </p>
             </div>
 
-            {/* Forces */}
-            {result.feedback.forces.length > 0 && (
-              <div className="mb-6">
-                <h3 className="font-bold text-lg text-green-700 mb-3 flex items-center gap-2">
-                  <FaCheckCircle /> Points Forts
-                </h3>
-                <ul className="space-y-2">
-                  {result.feedback.forces.map((force, i) => (
-                    <li key={i} className="flex items-start gap-2 text-gray-700">
-                      <span className="text-green-500 mt-1">✓</span>
-                      {force}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Faiblesses */}
-            {result.feedback.faiblesses.length > 0 && (
-              <div className="mb-6">
-                <h3 className="font-bold text-lg text-orange-700 mb-3">
-                  ⚠️ Points à Améliorer
-                </h3>
-                <ul className="space-y-2">
-                  {result.feedback.faiblesses.map((faiblesse, i) => (
-                    <li key={i} className="flex items-start gap-2 text-gray-700">
-                      <span className="text-orange-500 mt-1">→</span>
-                      {faiblesse}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Recommandations */}
-            {result.feedback.recommandations.length > 0 && (
-              <div className="mb-8">
-                <h3 className="font-bold text-lg text-blue-700 mb-3">
-                  💡 Recommandations
-                </h3>
-                <ul className="space-y-2">
-                  {result.feedback.recommandations.map((reco, i) => (
-                    <li key={i} className="flex items-start gap-2 text-gray-700">
-                      <span className="text-blue-500 mt-1">•</span>
-                      {reco}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* CTA */}
-            <div className="bg-gradient-to-r from-reddy-blue to-reddy-red p-6 rounded-xl text-white text-center">
-              <h3 className="font-bold text-xl mb-3">{result.action}</h3>
+            <div className="space-y-4">
+              <p className="text-gray-600">
+                En attendant, explorez nos ressources pour entrepreneurs :
+              </p>
               <div className="flex gap-4 justify-center flex-wrap">
                 <a
-                  href="/reserver"
-                  className="px-6 py-3 bg-white text-reddy-blue font-bold rounded-lg hover:shadow-lg transition-all"
+                  href="/blog"
+                  className="px-6 py-3 bg-reddy-blue text-white font-semibold rounded-lg hover:shadow-lg transition-all"
                 >
-                  Réserver un coaching
+                  📰 Lire le Blog
                 </a>
                 <a
                   href="/livres"
-                  className="px-6 py-3 border-2 border-white text-white font-bold rounded-lg hover:bg-white/10 transition-all"
+                  className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all"
                 >
-                  Voir nos formations
+                  📚 Nos Livres
+                </a>
+                <a
+                  href="/"
+                  className="px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all"
+                >
+                  🏠 Retour à l'accueil
                 </a>
               </div>
             </div>
