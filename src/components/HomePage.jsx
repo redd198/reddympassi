@@ -119,13 +119,6 @@ const HomePage = () => {
                 </a>
                 
                 <a
-                  href="/calculateurs"
-                  className="px-8 py-4 bg-purple-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-out"
-                >
-                  🧮 Calculateurs gratuits
-                </a>
-                
-                <a
                   href="/livres"
                   className="px-8 py-4 bg-green-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-out"
                 >
@@ -151,7 +144,7 @@ const HomePage = () => {
           className="fixed left-6 top-1/2 -translate-y-1/2 hidden lg:flex flex-col gap-4 z-20"
         >
           <a
-            href="https://linkedin.com"
+            href="https://www.linkedin.com/in/reddy-insider"
             target="_blank"
             rel="noopener noreferrer"
             className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-reddy-blue shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300"
@@ -186,7 +179,7 @@ const HomePage = () => {
           className="fixed bottom-6 left-1/2 -translate-x-1/2 flex lg:hidden gap-4 z-20"
         >
           <a
-            href="https://linkedin.com"
+            href="https://www.linkedin.com/in/reddy-insider"
             target="_blank"
             rel="noopener noreferrer"
             className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-reddy-blue shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300"
