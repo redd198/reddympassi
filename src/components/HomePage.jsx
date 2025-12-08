@@ -1,6 +1,11 @@
 import { motion } from 'framer-motion'
 import { FaLinkedin, FaYoutube, FaWhatsapp } from 'react-icons/fa'
 import Navbar from './Navbar'
+import LeadMagnetPopup from './LeadMagnetPopup'
+import FloatingWhatsApp from './FloatingWhatsApp'
+import TestimonialsSection from './TestimonialsSection'
+import LiveVisitorCounter from './LiveVisitorCounter'
+import FeaturedInBadge from './FeaturedInBadge'
 import { useVisitorTracking } from '../hooks/useVisitorTracking'
 
 const HomePage = () => {
@@ -204,10 +209,25 @@ const HomePage = () => {
         </motion.div>
       </section>
 
+      {/* Featured In Badge */}
+      <FeaturedInBadge />
+
+      {/* Testimonials Section */}
+      <TestimonialsSection />
+
       {/* Footer */}
       <footer className="py-6 text-center text-gray-600 text-sm border-t border-gray-200 bg-white/50 backdrop-blur-sm">
         <p>© 2025 Reddy Mpassi — Tous droits réservés</p>
       </footer>
+
+      {/* Lead Magnet Popup */}
+      <LeadMagnetPopup />
+      
+      {/* Floating WhatsApp */}
+      <FloatingWhatsApp />
+      
+      {/* Live Visitor Counter */}
+      <LiveVisitorCounter />
     </div>
   )
 }
