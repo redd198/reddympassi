@@ -150,7 +150,7 @@ const HomePage = () => {
           </a>
           
           <a
-            href="https://youtube.com"
+            href="https://www.youtube.com/@Reddy-Insider"
             target="_blank"
             rel="noopener noreferrer"
             className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-reddy-red shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300"
@@ -185,7 +185,7 @@ const HomePage = () => {
           </a>
           
           <a
-            href="https://youtube.com"
+            href="https://www.youtube.com/@Reddy-Insider"
             target="_blank"
             rel="noopener noreferrer"
             className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-reddy-red shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300"
