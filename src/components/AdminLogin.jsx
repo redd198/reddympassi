@@ -31,9 +31,21 @@ const AdminLogin = ({ onLogin }) => {
       }
     } catch (error) {
       console.error('❌ Erreur connexion:', error)
-      setError('Erreur de connexion au serveur')
+      setError('⚠️ Serveur en veille. Cliquez sur "Réveiller le serveur" ci-dessous et réessayez dans 30 secondes.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const wakeUpServer = async () => {
+    setError('⏳ Réveil du serveur en cours... Patientez 30 secondes.')
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/health`)
+      setTimeout(() => {
+        setError('✅ Serveur réveillé ! Vous pouvez maintenant vous connecter.')
+      }, 2000)
+    } catch (err) {
+      setError('❌ Impossible de contacter le serveur. Vérifiez votre connexion internet.')
     }
   }
 
@@ -93,9 +105,21 @@ const AdminLogin = ({ onLogin }) => {
           </button>
         </form>
 
+        {error && error.includes('veille') && (
+          <button
+            onClick={wakeUpServer}
+            className="w-full mt-4 py-3 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition-all"
+          >
+            ⚡ Réveiller le serveur
+          </button>
+        )}
+
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-500 mb-2">
-            Problème de connexion ? Videz le cache : <kbd className="px-2 py-1 bg-gray-200 rounded">Ctrl + F5</kbd>
+          <p className="text-sm text-gray-500">
+            Identifiants : <span className="font-mono">admin / Admin@2024</span>
+          </p>
+          <p className="text-xs text-gray-400 mt-2">
+            Écran blanc ? <kbd className="px-1 py-0.5 bg-gray-200 rounded text-xs">Ctrl + F5</kbd>
           </p>
         </div>
       </motion.div>
