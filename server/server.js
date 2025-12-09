@@ -390,21 +390,31 @@ app.get('/api/create-first-admin', async (req, res) => {
 app.post('/api/admin/login', async (req, res) => {
   try {
     const { username, password } = req.body
+    console.log('🔐 Tentative de login:', username)
 
     const { query, params } = adaptQuery('SELECT * FROM admins WHERE username = ?', [username])
     const result = await executeQuery(query, params)
     const rows = extractRows(result)
     
     if (rows.length === 0) {
+      console.log('❌ Utilisateur non trouvé:', username)
       return res.status(401).json({ error: 'Identifiants incorrects' })
     }
 
     const admin = rows[0]
+    console.log('👤 Admin trouvé:', admin.username)
+    console.log('🔑 Hash dans la base:', admin.password.substring(0, 20) + '...')
+    console.log('🔑 Mot de passe fourni:', password)
+    
     const validPassword = await bcrypt.compare(password, admin.password)
+    console.log('✅ Validation mot de passe:', validPassword)
 
     if (!validPassword) {
+      console.log('❌ Mot de passe incorrect')
       return res.status(401).json({ error: 'Identifiants incorrects' })
     }
+    
+    console.log('✅ Login réussi pour:', username)
 
     const token = jwt.sign(
       { id: admin.id, username: admin.username },
