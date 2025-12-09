@@ -622,22 +622,24 @@ const AdminDashboard = ({ token, onLogout }) => {
         {activeTab === 'dashboard' && stats && (
           <div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <StatCard icon={FaUsers} label="Total Leads" value={stats.stats.leads} color="blue" />
-              <StatCard icon={FaCalendar} label="Réservations" value={stats.stats.reservations} color="green" />
-              <StatCard icon={FaBook} label="Commandes" value={stats.stats.commandes} color="purple" />
-              <StatCard icon={FaGlobe} label="Visiteurs (Aujourd'hui)" value={stats.stats.visitorsToday} color="orange" />
+              <StatCard icon={FaUsers} label="Total Leads" value={stats.leads || 0} color="blue" />
+              <StatCard icon={FaCalendar} label="Réservations" value={stats.reservations || 0} color="green" />
+              <StatCard icon={FaBook} label="Commandes" value={stats.commandes || 0} color="purple" />
+              <StatCard icon={FaGlobe} label="Visiteurs (Aujourd'hui)" value={stats.visitorsToday || 0} color="orange" />
             </div>
 
             {/* Top Countries */}
             <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
               <h2 className="text-xl font-bold mb-4">🌍 Top Pays des Visiteurs</h2>
               <div className="space-y-3">
-                {stats.topCountries.map((country, index) => (
+                {stats.topCountries && stats.topCountries.length > 0 ? stats.topCountries.map((country, index) => (
                   <div key={index} className="flex items-center justify-between">
                     <span className="font-semibold">{country.country}</span>
                     <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full">{country.count} visites</span>
                   </div>
-                ))}
+                )) : (
+                  <p className="text-gray-500 text-center">Aucune donnée disponible</p>
+                )}
               </div>
             </div>
 
@@ -645,13 +647,15 @@ const AdminDashboard = ({ token, onLogout }) => {
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h2 className="text-xl font-bold mb-4">🎯 Leads Récents</h2>
               <div className="space-y-4">
-                {stats.recentLeads.map(lead => (
+                {stats.recentLeads && stats.recentLeads.length > 0 ? stats.recentLeads.map(lead => (
                   <div key={lead.id} className="border-l-4 border-blue-500 pl-4 py-2">
                     <p className="font-semibold">{lead.prenom}</p>
                     <p className="text-sm text-gray-600">{lead.email} • {lead.whatsapp}</p>
                     <p className="text-xs text-gray-500">{new Date(lead.created_at).toLocaleString('fr-FR')}</p>
                   </div>
-                ))}
+                )) : (
+                  <p className="text-gray-500 text-center">Aucun lead récent</p>
+                )}
               </div>
             </div>
           </div>
