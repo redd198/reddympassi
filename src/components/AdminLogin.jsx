@@ -21,22 +21,17 @@ const AdminLogin = ({ onLogin }) => {
 
       const data = await response.json()
 
-      if (response.ok) {
+      if (response.ok && data.token) {
+        console.log('✅ Login réussi')
         localStorage.setItem('adminToken', data.token)
         onLogin(data.token)
       } else {
-        // Messages d'erreur plus explicites
-        if (response.status === 404) {
-          setError('❌ Utilisateur non trouvé. Créez d\'abord l\'admin via /api/create-first-admin')
-        } else if (response.status === 401) {
-          setError('❌ Mot de passe incorrect')
-        } else {
-          setError(data.message || data.error || 'Erreur de connexion')
-        }
+        console.error('❌ Erreur login:', data)
+        setError(data.message || data.error || 'Identifiants incorrects')
       }
     } catch (error) {
-      console.error('Erreur login:', error)
-      setError('❌ Impossible de contacter le serveur. Vérifiez que l\'API est en ligne.')
+      console.error('❌ Erreur connexion:', error)
+      setError('Erreur de connexion au serveur')
     } finally {
       setLoading(false)
     }
@@ -98,28 +93,11 @@ const AdminLogin = ({ onLogin }) => {
           </button>
         </form>
 
-        <div className="mt-6 text-center text-sm text-gray-600">
-          <p>Identifiants par défaut:</p>
-          <p className="font-mono bg-gray-100 p-2 rounded mt-2">
-            admin / Admin@2024
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-500 mb-2">
+            Problème de connexion ? Videz le cache : <kbd className="px-2 py-1 bg-gray-200 rounded">Ctrl + F5</kbd>
           </p>
         </div>
-
-        {error && error.includes('Créez d\'abord') && (
-          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-sm text-yellow-800 mb-2">
-              <strong>🔧 Solution :</strong> Créez l'utilisateur admin en accédant à :
-            </p>
-            <a
-              href={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/create-first-admin`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline text-sm break-all"
-            >
-              {import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/create-first-admin
-            </a>
-          </div>
-        )}
       </motion.div>
     </div>
   )
