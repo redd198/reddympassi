@@ -266,7 +266,7 @@ const BlogPage = () => {
               {articles.map((article) => {
                 const color = getCategoryColor(article.category)
                 return (
-              <motion.article
+                  <motion.article
                 key={article.id}
                 variants={cardVariants}
                 whileHover={{ y: -8, transition: { duration: 0.3 } }}
