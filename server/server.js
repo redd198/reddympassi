@@ -6,20 +6,15 @@ import jwt from 'jsonwebtoken'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import mysqlPool from './db.js'
-import postgresPool from './db-postgres.js'
 import { getLocationFromIP, getClientIP } from './tracking.js'
 import { sendLeadNotification, sendReservationNotification, sendCommandeNotification, sendValidationEmail, sendBookPDF } from './email.js'
 import { adaptQuery, extractRows, extractInsertId, dbType } from './db-helper.js'
+import { executeQuery, pool, isPostgres } from './db-query.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 dotenv.config()
-
-// Détecter automatiquement le type de base de données
-const isPostgres = process.env.DATABASE_URL?.startsWith('postgresql://')
-const pool = isPostgres ? postgresPool : mysqlPool
 
 console.log(`🗄️  Base de données: ${dbType}`)
 
@@ -44,7 +39,7 @@ app.post('/api/track-visitor', async (req, res) => {
       [clientIP, userAgent, pageUrl || '/', 'Non disponible', 'Non disponible']
     )
     
-    await pool.query(query, params)
+    await executeQuery(query, params)
     res.json({ success: true })
   } catch (error) {
     console.log('⚠️ Erreur tracking visiteur:', error.message)
@@ -93,7 +88,7 @@ app.get('/api/init-database', async (req, res) => {
     const sql = fs.readFileSync(sqlPath, 'utf8')
     
     // Exécuter le script SQL
-    await pool.query(sql)
+    await executeQuery(sql)
     
     res.json({ success: true, message: 'Base de données initialisée avec succès' })
   } catch (error) {
@@ -117,7 +112,7 @@ app.post('/api/reservations', async (req, res) => {
       'SELECT COUNT(*) as count FROM reservations WHERE email = ? AND statut = ?',
       [email, 'en_attente']
     )
-    const checkResult = await pool.query(checkQuery, checkParams)
+    const checkResult = await executeQuery(checkQuery, checkParams)
     const rows = extractRows(checkResult)
     
     if (rows[0].count > 0) {
@@ -133,7 +128,7 @@ app.post('/api/reservations', async (req, res) => {
       [nom, whatsapp, email, theme, objectif, date, heure, paiement]
     )
     
-    const result = await pool.query(query, params)
+    const result = await executeQuery(query, params)
     const insertId = extractInsertId(result)
 
     // Envoyer notification email
@@ -154,7 +149,7 @@ app.post('/api/reservations', async (req, res) => {
 app.get('/api/reservations', async (req, res) => {
   try {
     const { query, params } = adaptQuery('SELECT * FROM reservations ORDER BY created_at DESC', [])
-    const result = await pool.query(query, params)
+    const result = await executeQuery(query, params)
     const rows = extractRows(result)
     res.json(rows)
   } catch (error) {
@@ -177,7 +172,7 @@ app.post('/api/commandes', async (req, res) => {
       'SELECT COUNT(*) as count FROM commandes_livres WHERE email = ? AND livre = ? AND statut = ?',
       [email, livre, 'en_attente']
     )
-    const checkResult = await pool.query(checkQuery, checkParams)
+    const checkResult = await executeQuery(checkQuery, checkParams)
     const rows = extractRows(checkResult)
     
     if (rows[0].count > 0) {
@@ -192,7 +187,7 @@ app.post('/api/commandes', async (req, res) => {
       [nom, email, whatsapp, livre]
     )
     
-    const result = await pool.query(query, params)
+    const result = await executeQuery(query, params)
     const insertId = extractInsertId(result)
 
     // Envoyer notification email
@@ -224,7 +219,7 @@ app.post('/api/leads', async (req, res) => {
       [prenom, email, whatsapp, preference || 'whatsapp', source || 'site-web', produit || 'Livre gratuit']
     )
     
-    const result = await pool.query(query, params)
+    const result = await executeQuery(query, params)
     const insertId = extractInsertId(result)
 
     // Envoyer notification email
@@ -299,7 +294,7 @@ app.post('/api/newsletter', async (req, res) => {
     console.log('📤 Query:', query)
     console.log('📤 Params:', params)
     
-    await pool.query(query, params)
+    await executeQuery(query, params)
 
     console.log('✅ Inscription newsletter réussie')
     res.status(201).json({
@@ -326,7 +321,7 @@ app.get('/api/blog/articles', async (req, res) => {
       'SELECT * FROM blog_articles WHERE published = ? ORDER BY created_at DESC',
       [true]
     )
-    const result = await pool.query(query, params)
+    const result = await executeQuery(query, params)
     const rows = extractRows(result)
     res.json(rows)
   } catch (error) {
@@ -342,7 +337,7 @@ app.get('/api/emploi/opportunites', async (req, res) => {
       'SELECT * FROM opportunites_emploi WHERE published = ? ORDER BY created_at DESC',
       [true]
     )
-    const result = await pool.query(query, params)
+    const result = await executeQuery(query, params)
     const rows = extractRows(result)
     res.json(rows)
   } catch (error) {
@@ -358,7 +353,7 @@ app.get('/api/create-first-admin', async (req, res) => {
   try {
     // Vérifier si un admin existe déjà
     const { query: checkQuery, params: checkParams } = adaptQuery('SELECT COUNT(*) as count FROM admins', [])
-    const checkResult = await pool.query(checkQuery, checkParams)
+    const checkResult = await executeQuery(checkQuery, checkParams)
     const rows = extractRows(checkResult)
     
     if (rows[0].count > 0) {
@@ -375,7 +370,7 @@ app.get('/api/create-first-admin', async (req, res) => {
       ['admin', hashedPassword, 'reddympassi@gmail.com']
     )
     
-    await pool.query(insertQuery, insertParams)
+    await executeQuery(insertQuery, insertParams)
 
     res.json({
       success: true,
@@ -397,7 +392,7 @@ app.post('/api/admin/login', async (req, res) => {
     const { username, password } = req.body
 
     const { query, params } = adaptQuery('SELECT * FROM admins WHERE username = ?', [username])
-    const result = await pool.query(query, params)
+    const result = await executeQuery(query, params)
     const rows = extractRows(result)
     
     if (rows.length === 0) {
@@ -437,11 +432,11 @@ app.get('/api/admin/stats', authenticateToken, async (req, res) => {
     const { query: q4, params: p4 } = adaptQuery('SELECT COUNT(*) as count FROM visitors', [])
     const { query: q5, params: p5 } = adaptQuery('SELECT COUNT(*) as count FROM visitors WHERE DATE(created_at) = CURRENT_DATE', [])
     
-    const leadsCount = extractRows(await pool.query(q1, p1))
-    const reservationsCount = extractRows(await pool.query(q2, p2))
-    const commandesCount = extractRows(await pool.query(q3, p3))
-    const visitorsCount = extractRows(await pool.query(q4, p4))
-    const visitorsToday = extractRows(await pool.query(q5, p5))
+    const leadsCount = extractRows(await executeQuery(q1, p1))
+    const reservationsCount = extractRows(await executeQuery(q2, p2))
+    const commandesCount = extractRows(await executeQuery(q3, p3))
+    const visitorsCount = extractRows(await executeQuery(q4, p4))
+    const visitorsToday = extractRows(await executeQuery(q5, p5))
     
     // Top pays
     const { query: q6, params: p6 } = adaptQuery(`
@@ -452,11 +447,11 @@ app.get('/api/admin/stats', authenticateToken, async (req, res) => {
       ORDER BY count DESC 
       LIMIT 10
     `, ['Inconnu'])
-    const topCountries = extractRows(await pool.query(q6, p6))
+    const topCountries = extractRows(await executeQuery(q6, p6))
 
     // Leads récents
     const { query: q7, params: p7 } = adaptQuery('SELECT * FROM leads ORDER BY created_at DESC LIMIT 5', [])
-    const recentLeads = extractRows(await pool.query(q7, p7))
+    const recentLeads = extractRows(await executeQuery(q7, p7))
 
     res.json({
       stats: {
@@ -479,7 +474,7 @@ app.get('/api/admin/stats', authenticateToken, async (req, res) => {
 app.get('/api/admin/leads', authenticateToken, async (req, res) => {
   try {
     const { query, params } = adaptQuery('SELECT * FROM leads ORDER BY created_at DESC', [])
-    const result = await pool.query(query, params)
+    const result = await executeQuery(query, params)
     const rows = extractRows(result)
     res.json(rows)
   } catch (error) {
@@ -492,7 +487,7 @@ app.get('/api/admin/leads', authenticateToken, async (req, res) => {
 app.get('/api/admin/reservations', authenticateToken, async (req, res) => {
   try {
     const { query, params } = adaptQuery('SELECT * FROM reservations ORDER BY created_at DESC', [])
-    const result = await pool.query(query, params)
+    const result = await executeQuery(query, params)
     const rows = extractRows(result)
     res.json(rows)
   } catch (error) {
@@ -505,7 +500,7 @@ app.get('/api/admin/reservations', authenticateToken, async (req, res) => {
 app.get('/api/admin/commandes', authenticateToken, async (req, res) => {
   try {
     const { query, params } = adaptQuery('SELECT * FROM commandes_livres ORDER BY created_at DESC', [])
-    const result = await pool.query(query, params)
+    const result = await executeQuery(query, params)
     const rows = extractRows(result)
     res.json(rows)
   } catch (error) {
@@ -518,7 +513,7 @@ app.get('/api/admin/commandes', authenticateToken, async (req, res) => {
 app.get('/api/admin/newsletter', authenticateToken, async (req, res) => {
   try {
     const { query, params } = adaptQuery('SELECT * FROM newsletter ORDER BY created_at DESC', [])
-    const result = await pool.query(query, params)
+    const result = await executeQuery(query, params)
     const rows = extractRows(result)
     res.json(rows)
   } catch (error) {
@@ -533,7 +528,7 @@ app.get('/api/admin/newsletter', authenticateToken, async (req, res) => {
 app.get('/api/admin/blog/articles', authenticateToken, async (req, res) => {
   try {
     const { query, params} = adaptQuery('SELECT * FROM blog_articles ORDER BY created_at DESC', [])
-    const result = await pool.query(query, params)
+    const result = await executeQuery(query, params)
     const rows = extractRows(result)
     res.json(rows)
   } catch (error) {
@@ -553,7 +548,7 @@ app.post('/api/admin/blog/articles', authenticateToken, async (req, res) => {
         'INSERT INTO blog_articles (title, excerpt, content, category, image, read_time, published, external_link) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         [title, excerpt, content, category, image || null, readTime || '5 min', published || false, external_link || null]
       )
-      await pool.query(query, params)
+      await executeQuery(query, params)
     } catch (err) {
       // Si la colonne n'existe pas, essayer sans external_link
       if (err.message.includes('external_link') || err.code === '42703' || err.errno === 1054) {
@@ -562,7 +557,7 @@ app.post('/api/admin/blog/articles', authenticateToken, async (req, res) => {
           'INSERT INTO blog_articles (title, excerpt, content, category, image, read_time, published) VALUES (?, ?, ?, ?, ?, ?, ?)',
           [title, excerpt, content, category, image || null, readTime || '5 min', published || false]
         )
-        await pool.query(query, params)
+        await executeQuery(query, params)
       } else {
         throw err
       }
@@ -587,7 +582,7 @@ app.put('/api/admin/blog/articles/:id', authenticateToken, async (req, res) => {
         'UPDATE blog_articles SET title = ?, excerpt = ?, content = ?, category = ?, image = ?, read_time = ?, published = ?, external_link = ? WHERE id = ?',
         [title, excerpt, content, category, image, readTime, published, external_link || null, id]
       )
-      await pool.query(query, params)
+      await executeQuery(query, params)
     } catch (err) {
       // Si la colonne n'existe pas, essayer sans external_link
       if (err.message.includes('external_link') || err.code === '42703' || err.errno === 1054) {
@@ -596,7 +591,7 @@ app.put('/api/admin/blog/articles/:id', authenticateToken, async (req, res) => {
           'UPDATE blog_articles SET title = ?, excerpt = ?, content = ?, category = ?, image = ?, read_time = ?, published = ? WHERE id = ?',
           [title, excerpt, content, category, image, readTime, published, id]
         )
-        await pool.query(query, params)
+        await executeQuery(query, params)
       } else {
         throw err
       }
@@ -614,7 +609,7 @@ app.delete('/api/admin/blog/articles/:id', authenticateToken, async (req, res) =
   try {
     const { id } = req.params
     const { query, params } = adaptQuery('DELETE FROM blog_articles WHERE id = ?', [id])
-    await pool.query(query, params)
+    await executeQuery(query, params)
     res.json({ success: true, message: 'Article supprimé' })
   } catch (error) {
     console.error('Erreur suppression article:', error)
@@ -628,7 +623,7 @@ app.delete('/api/admin/blog/articles/:id', authenticateToken, async (req, res) =
 app.get('/api/admin/emploi/opportunites', authenticateToken, async (req, res) => {
   try {
     const { query, params } = adaptQuery('SELECT * FROM opportunites_emploi ORDER BY created_at DESC', [])
-    const result = await pool.query(query, params)
+    const result = await executeQuery(query, params)
     const rows = extractRows(result)
     res.json(rows)
   } catch (error) {
@@ -647,7 +642,7 @@ app.post('/api/admin/emploi/opportunites', authenticateToken, async (req, res) =
       [title, company, location, type, description, requirements || null, salary || null, link || null, published || false]
     )
     
-    await pool.query(query, params)
+    await executeQuery(query, params)
     res.status(201).json({ success: true, message: 'Opportunité créée' })
   } catch (error) {
     console.error('Erreur création opportunité:', error)
@@ -666,7 +661,7 @@ app.put('/api/admin/emploi/opportunites/:id', authenticateToken, async (req, res
       [title, company, location, type, description, requirements, salary, link, published, id]
     )
     
-    await pool.query(query, params)
+    await executeQuery(query, params)
     res.json({ success: true, message: 'Opportunité modifiée' })
   } catch (error) {
     console.error('Erreur modification opportunité:', error)
@@ -679,7 +674,7 @@ app.delete('/api/admin/emploi/opportunites/:id', authenticateToken, async (req, 
   try {
     const { id } = req.params
     const { query, params } = adaptQuery('DELETE FROM opportunites_emploi WHERE id = ?', [id])
-    await pool.query(query, params)
+    await executeQuery(query, params)
     res.json({ success: true, message: 'Opportunité supprimée' })
   } catch (error) {
     console.error('Erreur suppression opportunité:', error)
@@ -693,13 +688,13 @@ app.get('/api/admin/migrate-commandes', authenticateToken, async (req, res) => {
     const isPostgres = process.env.DATABASE_URL?.startsWith('postgresql://')
     
     if (isPostgres) {
-      await pool.query(`
+      await executeQuery(`
         ALTER TABLE commandes_livres 
         ADD COLUMN IF NOT EXISTS statut VARCHAR(50) DEFAULT 'en_attente'
       `)
     } else {
       // MySQL
-      await pool.query(`
+      await executeQuery(`
         ALTER TABLE commandes_livres 
         ADD COLUMN statut VARCHAR(50) DEFAULT 'en_attente'
       `)
@@ -718,13 +713,13 @@ app.get('/api/admin/migrate-reservations', authenticateToken, async (req, res) =
     const isPostgres = process.env.DATABASE_URL?.startsWith('postgresql://')
     
     if (isPostgres) {
-      await pool.query(`
+      await executeQuery(`
         ALTER TABLE reservations 
         ADD COLUMN IF NOT EXISTS statut VARCHAR(50) DEFAULT 'en_attente'
       `)
     } else {
       // MySQL
-      await pool.query(`
+      await executeQuery(`
         ALTER TABLE reservations 
         ADD COLUMN statut VARCHAR(50) DEFAULT 'en_attente'
       `)
@@ -748,11 +743,11 @@ app.get('/api/admin/migrate-blog-complete', authenticateToken, async (req, res) 
     // 1. Modifier newsletter pour ajouter whatsapp et type
     try {
       if (isPostgres) {
-        await pool.query(`ALTER TABLE newsletter ADD COLUMN IF NOT EXISTS whatsapp VARCHAR(20)`)
-        await pool.query(`ALTER TABLE newsletter ADD COLUMN IF NOT EXISTS type VARCHAR(20) DEFAULT 'email'`)
+        await executeQuery(`ALTER TABLE newsletter ADD COLUMN IF NOT EXISTS whatsapp VARCHAR(20)`)
+        await executeQuery(`ALTER TABLE newsletter ADD COLUMN IF NOT EXISTS type VARCHAR(20) DEFAULT 'email'`)
       } else {
-        await pool.query(`ALTER TABLE newsletter ADD COLUMN whatsapp VARCHAR(20)`)
-        await pool.query(`ALTER TABLE newsletter ADD COLUMN type VARCHAR(20) DEFAULT 'email'`)
+        await executeQuery(`ALTER TABLE newsletter ADD COLUMN whatsapp VARCHAR(20)`)
+        await executeQuery(`ALTER TABLE newsletter ADD COLUMN type VARCHAR(20) DEFAULT 'email'`)
       }
       results.push('✅ Newsletter modifiée')
     } catch (e) {
@@ -762,7 +757,7 @@ app.get('/api/admin/migrate-blog-complete', authenticateToken, async (req, res) 
     // 2. Créer table blog_articles
     try {
       if (isPostgres) {
-        await pool.query(`
+        await executeQuery(`
           CREATE TABLE IF NOT EXISTS blog_articles (
             id SERIAL PRIMARY KEY,
             title VARCHAR(255) NOT NULL,
@@ -777,7 +772,7 @@ app.get('/api/admin/migrate-blog-complete', authenticateToken, async (req, res) 
           )
         `)
       } else {
-        await pool.query(`
+        await executeQuery(`
           CREATE TABLE IF NOT EXISTS blog_articles (
             id INT AUTO_INCREMENT PRIMARY KEY,
             title VARCHAR(255) NOT NULL,
@@ -800,7 +795,7 @@ app.get('/api/admin/migrate-blog-complete', authenticateToken, async (req, res) 
     // 3. Créer table opportunites_emploi
     try {
       if (isPostgres) {
-        await pool.query(`
+        await executeQuery(`
           CREATE TABLE IF NOT EXISTS opportunites_emploi (
             id SERIAL PRIMARY KEY,
             title VARCHAR(255) NOT NULL,
@@ -817,7 +812,7 @@ app.get('/api/admin/migrate-blog-complete', authenticateToken, async (req, res) 
           )
         `)
       } else {
-        await pool.query(`
+        await executeQuery(`
           CREATE TABLE IF NOT EXISTS opportunites_emploi (
             id INT AUTO_INCREMENT PRIMARY KEY,
             title VARCHAR(255) NOT NULL,
@@ -899,7 +894,7 @@ app.get('/api/admin/fix-statut-constraint', authenticateToken, async (req, res) 
 
     // Étape 1 : Supprimer la contrainte CHECK si elle existe
     try {
-      await pool.query(`
+      await executeQuery(`
         ALTER TABLE commandes_livres 
         DROP CONSTRAINT IF EXISTS commandes_livres_statut_check
       `)
@@ -910,7 +905,7 @@ app.get('/api/admin/fix-statut-constraint', authenticateToken, async (req, res) 
 
     // Étape 2 : Supprimer la colonne statut si elle existe
     try {
-      await pool.query(`
+      await executeQuery(`
         ALTER TABLE commandes_livres 
         DROP COLUMN IF EXISTS statut
       `)
@@ -920,14 +915,14 @@ app.get('/api/admin/fix-statut-constraint', authenticateToken, async (req, res) 
     }
 
     // Étape 3 : Recréer la colonne statut proprement
-    await pool.query(`
+    await executeQuery(`
       ALTER TABLE commandes_livres 
       ADD COLUMN statut VARCHAR(50) DEFAULT 'en_attente'
     `)
     console.log('✅ Colonne statut recréée')
 
     // Étape 4 : Vérifier la structure
-    const result = await pool.query(`
+    const result = await executeQuery(`
       SELECT column_name, data_type, column_default 
       FROM information_schema.columns 
       WHERE table_name = 'commandes_livres' AND column_name = 'statut'
@@ -963,7 +958,7 @@ app.post('/api/admin/commandes/:id/valider', authenticateToken, async (req, res)
       'SELECT * FROM commandes_livres WHERE id = ?',
       [id]
     )
-    const result = await pool.query(selectQuery, selectParams)
+    const result = await executeQuery(selectQuery, selectParams)
     const commandes = extractRows(result)
     
     if (commandes.length === 0) {
@@ -977,7 +972,7 @@ app.post('/api/admin/commandes/:id/valider', authenticateToken, async (req, res)
       'UPDATE commandes_livres SET statut = ? WHERE id = ?',
       ['validee', id]
     )
-    await pool.query(updateQuery, updateParams)
+    await executeQuery(updateQuery, updateParams)
 
     // Envoyer automatiquement le PDF par email (désactivé temporairement)
     let pdfSent = false
@@ -1041,7 +1036,7 @@ app.post('/api/admin/reservations/:id/valider', authenticateToken, async (req, r
       'SELECT * FROM reservations WHERE id = ?',
       [id]
     )
-    const result = await pool.query(selectQuery, selectParams)
+    const result = await executeQuery(selectQuery, selectParams)
     const reservations = extractRows(result)
     
     if (reservations.length === 0) {
@@ -1055,7 +1050,7 @@ app.post('/api/admin/reservations/:id/valider', authenticateToken, async (req, r
       'UPDATE reservations SET statut = ? WHERE id = ?',
       ['validee', id]
     )
-    await pool.query(updateQuery, updateParams)
+    await executeQuery(updateQuery, updateParams)
 
     // Préparer le message avec les variables
     const messageFinal = message
@@ -1089,7 +1084,7 @@ app.post('/api/admin/reservations/:id/valider', authenticateToken, async (req, r
 app.get('/api/admin/visitors', authenticateToken, async (req, res) => {
   try {
     const { query, params } = adaptQuery('SELECT * FROM visitors ORDER BY created_at DESC LIMIT 100', [])
-    const result = await pool.query(query, params)
+    const result = await executeQuery(query, params)
     const rows = extractRows(result)
     res.json(rows)
   } catch (error) {
@@ -1103,7 +1098,7 @@ app.patch('/api/admin/leads/:id', authenticateToken, async (req, res) => {
   try {
     const { statut } = req.body
     const { query, params } = adaptQuery('UPDATE leads SET statut = ? WHERE id = ?', [statut, req.params.id])
-    await pool.query(query, params)
+    await executeQuery(query, params)
     res.json({ success: true })
   } catch (error) {
     console.error('Erreur:', error)
@@ -1118,7 +1113,7 @@ app.delete('/api/admin/reservations/:id', authenticateToken, async (req, res) =>
   try {
     const { id } = req.params
     const { query, params } = adaptQuery('DELETE FROM reservations WHERE id = ?', [id])
-    await pool.query(query, params)
+    await executeQuery(query, params)
     res.json({ success: true, message: 'Réservation supprimée' })
   } catch (error) {
     console.error('Erreur suppression réservation:', error)
@@ -1131,7 +1126,7 @@ app.delete('/api/admin/commandes/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params
     const { query, params } = adaptQuery('DELETE FROM commandes_livres WHERE id = ?', [id])
-    await pool.query(query, params)
+    await executeQuery(query, params)
     res.json({ success: true, message: 'Commande supprimée' })
   } catch (error) {
     console.error('Erreur suppression commande:', error)
@@ -1144,7 +1139,7 @@ app.delete('/api/admin/visitors/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params
     const { query, params } = adaptQuery('DELETE FROM visitors WHERE id = ?', [id])
-    await pool.query(query, params)
+    await executeQuery(query, params)
     res.json({ success: true, message: 'Visiteur supprimé' })
   } catch (error) {
     console.error('Erreur suppression visiteur:', error)
@@ -1157,7 +1152,7 @@ app.delete('/api/admin/leads/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params
     const { query, params } = adaptQuery('DELETE FROM leads WHERE id = ?', [id])
-    await pool.query(query, params)
+    await executeQuery(query, params)
     res.json({ success: true, message: 'Lead supprimé' })
   } catch (error) {
     console.error('Erreur suppression lead:', error)
@@ -1170,7 +1165,7 @@ app.delete('/api/admin/newsletter/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params
     const { query, params } = adaptQuery('DELETE FROM newsletter WHERE id = ?', [id])
-    await pool.query(query, params)
+    await executeQuery(query, params)
     res.json({ success: true, message: 'Inscription newsletter supprimée' })
   } catch (error) {
     console.error('Erreur suppression newsletter:', error)
@@ -1187,7 +1182,7 @@ app.get('/api/featured-video', async (req, res) => {
       'SELECT * FROM featured_videos WHERE published = ? ORDER BY created_at DESC LIMIT 1',
       [true]
     )
-    const result = await pool.query(query, params)
+    const result = await executeQuery(query, params)
     const rows = extractRows(result)
     
     if (rows.length > 0) {
@@ -1205,7 +1200,7 @@ app.get('/api/featured-video', async (req, res) => {
 app.get('/api/admin/featured-videos', authenticateToken, async (req, res) => {
   try {
     const { query, params } = adaptQuery('SELECT * FROM featured_videos ORDER BY created_at DESC', [])
-    const result = await pool.query(query, params)
+    const result = await executeQuery(query, params)
     res.json(extractRows(result))
   } catch (error) {
     console.error('Erreur récupération vidéos:', error)
@@ -1234,7 +1229,7 @@ app.post('/api/admin/featured-videos', authenticateToken, async (req, res) => {
     console.log('📤 Query:', query)
     console.log('📤 Params:', params)
     
-    const result = await pool.query(query, params)
+    const result = await executeQuery(query, params)
     const insertId = extractInsertId(result)
 
     console.log('✅ Vidéo créée, ID:', insertId)
@@ -1264,7 +1259,7 @@ app.put('/api/admin/featured-videos/:id', authenticateToken, async (req, res) =>
       [title, description, thumbnail || null, video_url, published, id]
     )
     
-    await pool.query(query, params)
+    await executeQuery(query, params)
 
     res.json({
       success: true,
@@ -1282,7 +1277,7 @@ app.delete('/api/admin/featured-videos/:id', authenticateToken, async (req, res)
     const { id } = req.params
 
     const { query, params } = adaptQuery('DELETE FROM featured_videos WHERE id = ?', [id])
-    await pool.query(query, params)
+    await executeQuery(query, params)
 
     res.json({ success: true, message: 'Vidéo supprimée' })
   } catch (error) {
@@ -1306,7 +1301,7 @@ app.get('/api/admin/migrate-featured-videos', authenticateToken, async (req, res
     const sqlPath = join(__dirname, sqlFile)
     
     const sql = fs.readFileSync(sqlPath, 'utf8')
-    await pool.query(sql)
+    await executeQuery(sql)
     
     res.json({ success: true, message: 'Table featured_videos créée avec succès' })
   } catch (error) {
@@ -1321,9 +1316,9 @@ app.get('/api/admin/migrate-blog-external-link', authenticateToken, async (req, 
     const isPostgres = process.env.DATABASE_URL?.startsWith('postgresql://')
     
     if (isPostgres) {
-      await pool.query('ALTER TABLE blog_articles ADD COLUMN IF NOT EXISTS external_link VARCHAR(500)')
+      await executeQuery('ALTER TABLE blog_articles ADD COLUMN IF NOT EXISTS external_link VARCHAR(500)')
     } else {
-      await pool.query('ALTER TABLE blog_articles ADD COLUMN external_link VARCHAR(500)')
+      await executeQuery('ALTER TABLE blog_articles ADD COLUMN external_link VARCHAR(500)')
     }
     
     res.json({ success: true, message: 'Colonne external_link ajoutée' })
@@ -1411,7 +1406,7 @@ app.post('/api/admin/sync-opportunities', authenticateToken, async (req, res) =>
     )
     
     try {
-      await pool.query(deleteQuery, deleteParams)
+      await executeQuery(deleteQuery, deleteParams)
       console.log('🗑️ Anciennes opportunités supprimées')
     } catch (err) {
       console.log('ℹ️ Pas d\'anciennes opportunités à supprimer')
@@ -1426,7 +1421,7 @@ app.post('/api/admin/sync-opportunities', authenticateToken, async (req, res) =>
           [opp.title, opp.company, opp.location, opp.type, opp.description, opp.requirements, opp.salary, opp.link]
         )
         
-        await pool.query(query, params)
+        await executeQuery(query, params)
         addedCount++
         console.log(`✅ Opportunité ajoutée: ${opp.title}`)
       } catch (err) {
