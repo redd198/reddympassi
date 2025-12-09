@@ -25,10 +25,18 @@ const AdminLogin = ({ onLogin }) => {
         localStorage.setItem('adminToken', data.token)
         onLogin(data.token)
       } else {
-        setError(data.error || 'Erreur de connexion')
+        // Messages d'erreur plus explicites
+        if (response.status === 404) {
+          setError('❌ Utilisateur non trouvé. Créez d\'abord l\'admin via /api/create-first-admin')
+        } else if (response.status === 401) {
+          setError('❌ Mot de passe incorrect')
+        } else {
+          setError(data.message || data.error || 'Erreur de connexion')
+        }
       }
     } catch (error) {
-      setError('Erreur de connexion au serveur')
+      console.error('Erreur login:', error)
+      setError('❌ Impossible de contacter le serveur. Vérifiez que l\'API est en ligne.')
     } finally {
       setLoading(false)
     }
@@ -96,6 +104,22 @@ const AdminLogin = ({ onLogin }) => {
             admin / Admin@2024
           </p>
         </div>
+
+        {error && error.includes('Créez d\'abord') && (
+          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-800 mb-2">
+              <strong>🔧 Solution :</strong> Créez l'utilisateur admin en accédant à :
+            </p>
+            <a
+              href={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/create-first-admin`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline text-sm break-all"
+            >
+              {import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/create-first-admin
+            </a>
+          </div>
+        )}
       </motion.div>
     </div>
   )
