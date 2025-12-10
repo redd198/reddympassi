@@ -219,6 +219,21 @@ const HomePage = () => {
         <p>© 2025 Reddy Mpassi — Tous droits réservés</p>
       </footer>
 
+      {/* Bouton de test temporaire - À SUPPRIMER EN PRODUCTION */}
+      {import.meta.env.DEV && (
+        <div className="fixed bottom-4 left-4 z-50">
+          <button
+            onClick={() => {
+              localStorage.removeItem('leadMagnetSeen')
+              window.location.reload()
+            }}
+            className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg shadow-lg hover:bg-red-700 transition-colors"
+          >
+            🧪 Test Popup
+          </button>
+        </div>
+      )}
+
       {/* Lead Magnet Popup */}
       <LeadMagnetPopup />
       

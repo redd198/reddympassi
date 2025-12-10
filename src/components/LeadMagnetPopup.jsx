@@ -70,6 +70,10 @@ const LeadMagnetPopup = () => {
     e.preventDefault()
     setIsSubmitting(true)
 
+    console.log('🚀 Envoi du formulaire lead magnet...')
+    console.log('📊 Données:', formData)
+    console.log('🌐 URL API:', import.meta.env.VITE_API_URL || 'http://localhost:5000')
+
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/leads`, {
         method: 'POST',
@@ -89,6 +93,8 @@ const LeadMagnetPopup = () => {
       })
 
       const data = await response.json()
+      console.log('📥 Réponse serveur:', data)
+      console.log('✅ Status:', response.status, response.ok)
       
       if (response.ok) {
         setIsSuccess(true)
@@ -110,7 +116,7 @@ const LeadMagnetPopup = () => {
         setCountdown(5)
       }
     } catch (error) {
-      console.error('Erreur lors de l\'envoi:', error)
+      console.error('❌ Erreur lors de l\'envoi:', error)
       setIsError(true)
       setIsSuccess(false)
       setMessage('❌ Erreur de connexion. Vérifiez votre connexion internet et réessayez.')
