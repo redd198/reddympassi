@@ -7,7 +7,9 @@ const LeadMagnetPopup = () => {
   const [selectedMethod, setSelectedMethod] = useState('')
   const [formData, setFormData] = useState({
     prenom: '',
+    nom: '',
     contact: '', // email ou whatsapp selon le choix
+    telephone: '',
     preference: '' // 'email' ou 'whatsapp'
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -74,11 +76,13 @@ const LeadMagnetPopup = () => {
         },
         body: JSON.stringify({
           prenom: formData.prenom,
+          nom: formData.nom,
+          telephone: formData.telephone,
           email: formData.preference === 'email' ? formData.contact : '',
           whatsapp: formData.preference === 'whatsapp' ? formData.contact : '',
           preference: formData.preference,
-          source: 'popup-lead-magnet',
-          produit: 'Guide Économie Numérique Gratuit'
+          source: 'livre-gratuit',
+          produit: 'Économie Numérique en Afrique – Focus Congo-Brazzaville'
         }),
       })
 
@@ -188,6 +192,36 @@ const LeadMagnetPopup = () => {
                             required
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reddy-blue focus:border-transparent"
                             placeholder="Entrez votre prénom"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Votre nom de famille
+                          </label>
+                          <input
+                            type="text"
+                            name="nom"
+                            value={formData.nom}
+                            onChange={handleChange}
+                            required
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reddy-blue focus:border-transparent"
+                            placeholder="Entrez votre nom"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Votre numéro de téléphone
+                          </label>
+                          <input
+                            type="tel"
+                            name="telephone"
+                            value={formData.telephone}
+                            onChange={handleChange}
+                            required
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reddy-blue focus:border-transparent"
+                            placeholder="+242 XX XX XX XX"
                           />
                         </div>
                         

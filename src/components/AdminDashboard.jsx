@@ -13,6 +13,7 @@ const AdminDashboard = ({ token, onLogout }) => {
   const [blogArticles, setBlogArticles] = useState([])
   const [opportunites, setOpportunites] = useState([])
   const [videos, setVideos] = useState([])
+  const [downloads, setDownloads] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(true) // Menu ouvert par défaut sur desktop

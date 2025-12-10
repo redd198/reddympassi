@@ -207,16 +207,16 @@ app.post('/api/commandes', async (req, res) => {
 // Route pour enregistrer un lead (livre gratuit, webinaire, etc.)
 app.post('/api/leads', async (req, res) => {
   try {
-    const { prenom, email, whatsapp, preference, source, produit } = req.body
+    const { prenom, nom, telephone, email, whatsapp, preference, source, produit } = req.body
 
-    if (!prenom || !email || !whatsapp) {
-      return res.status(400).json({ error: 'Tous les champs sont requis' })
+    if (!prenom || (!email && !whatsapp)) {
+      return res.status(400).json({ error: 'Prénom et au moins un contact (email ou whatsapp) sont requis' })
     }
 
     const { query, params } = adaptQuery(
-      `INSERT INTO leads (prenom, email, whatsapp, preference, source, produit) 
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [prenom, email, whatsapp, preference || 'whatsapp', source || 'site-web', produit || 'Livre gratuit']
+      `INSERT INTO leads (prenom, nom, telephone, email, whatsapp, preference, source, produit) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [prenom, nom || '', telephone || '', email || '', whatsapp || '', preference || 'email', source || 'site-web', produit || 'Livre gratuit']
     )
     
     const result = await executeQuery(query, params)
@@ -228,8 +228,21 @@ app.post('/api/leads', async (req, res) => {
     // Si c'est pour le livre gratuit, envoyer le PDF automatiquement
     if (source === 'livre-gratuit') {
       try {
-        await sendBookPDF({ prenom, email, whatsapp, preference })
-        console.log(`✅ PDF envoyé à ${prenom} via ${preference}`)
+        // Enregistrer le téléchargement
+        const clientIP = getClientIP(req)
+        const userAgent = req.headers['user-agent'] || 'Unknown'
+        
+        const { query: downloadQuery, params: downloadParams } = adaptQuery(
+          `INSERT INTO pdf_downloads (lead_id, nom, email, telephone, livre, ip_address, user_agent, email_sent) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [insertId, `${prenom} ${nom}`.trim(), email || whatsapp, telephone, produit, clientIP, userAgent, true]
+        )
+        
+        await executeQuery(downloadQuery, downloadParams)
+        
+        // Envoyer le PDF
+        await sendBookPDF({ prenom, nom, email: email || whatsapp, whatsapp, preference, livre: produit })
+        console.log(`✅ PDF envoyé à ${prenom} ${nom} via ${preference}`)
       } catch (pdfError) {
         console.error('⚠️ Erreur envoi PDF:', pdfError.message)
         // Ne pas bloquer la réponse si l'envoi du PDF échoue
@@ -441,12 +454,16 @@ app.get('/api/admin/stats', authenticateToken, async (req, res) => {
     const { query: q3, params: p3 } = adaptQuery('SELECT COUNT(*) as count FROM commandes_livres', [])
     const { query: q4, params: p4 } = adaptQuery('SELECT COUNT(*) as count FROM visitors', [])
     const { query: q5, params: p5 } = adaptQuery('SELECT COUNT(*) as count FROM visitors WHERE DATE(created_at) = CURRENT_DATE', [])
+    const { query: q8, params: p8 } = adaptQuery('SELECT COUNT(*) as count FROM pdf_downloads', [])
+    const { query: q9, params: p9 } = adaptQuery('SELECT COUNT(*) as count FROM pdf_downloads WHERE DATE(download_date) = CURRENT_DATE', [])
     
     const leadsCount = extractRows(await executeQuery(q1, p1))
     const reservationsCount = extractRows(await executeQuery(q2, p2))
     const commandesCount = extractRows(await executeQuery(q3, p3))
     const visitorsCount = extractRows(await executeQuery(q4, p4))
     const visitorsToday = extractRows(await executeQuery(q5, p5))
+    const downloadsCount = extractRows(await executeQuery(q8, p8))
+    const downloadsToday = extractRows(await executeQuery(q9, p9))
     
     // Top pays
     const { query: q6, params: p6 } = adaptQuery(`
@@ -469,7 +486,9 @@ app.get('/api/admin/stats', authenticateToken, async (req, res) => {
         reservations: parseInt(reservationsCount[0]?.count || 0),
         commandes: parseInt(commandesCount[0]?.count || 0),
         visitors: parseInt(visitorsCount[0]?.count || 0),
-        visitorsToday: parseInt(visitorsToday[0]?.count || 0)
+        visitorsToday: parseInt(visitorsToday[0]?.count || 0),
+        downloads: parseInt(downloadsCount[0]?.count || 0),
+        downloadsToday: parseInt(downloadsToday[0]?.count || 0)
       },
       topCountries,
       recentLeads
@@ -528,6 +547,19 @@ app.get('/api/admin/newsletter', authenticateToken, async (req, res) => {
     res.json(rows)
   } catch (error) {
     console.error('Erreur:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
+// Récupérer tous les téléchargements de PDF
+app.get('/api/admin/downloads', authenticateToken, async (req, res) => {
+  try {
+    const { query, params } = adaptQuery('SELECT * FROM pdf_downloads ORDER BY download_date DESC', [])
+    const result = await executeQuery(query, params)
+    const rows = extractRows(result)
+    res.json(rows)
+  } catch (error) {
+    console.error('Erreur récupération téléchargements:', error)
     res.status(500).json({ error: 'Erreur serveur' })
   }
 })
