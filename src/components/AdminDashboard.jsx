@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { FaUsers, FaCalendar, FaBook, FaGlobe, FaSignOutAlt, FaChartLine, FaWhatsapp, FaTrash, FaEnvelope, FaNewspaper, FaBriefcase, FaEdit, FaEye, FaBars, FaTimes, FaSyncAlt, FaPlay } from 'react-icons/fa'
+import { FaUsers, FaCalendar, FaBook, FaGlobe, FaSignOutAlt, FaChartLine, FaWhatsapp, FaTrash, FaEnvelope, FaNewspaper, FaBriefcase, FaEdit, FaEye, FaBars, FaTimes, FaSyncAlt, FaPlay, FaDownload } from 'react-icons/fa'
 
 const AdminDashboard = ({ token, onLogout }) => {
   const [stats, setStats] = useState(null)
@@ -622,10 +622,11 @@ const AdminDashboard = ({ token, onLogout }) => {
           {/* Dashboard Tab */}
         {activeTab === 'dashboard' && stats && (
           <div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
               <StatCard icon={FaUsers} label="Total Leads" value={stats.leads || 0} color="blue" />
               <StatCard icon={FaCalendar} label="Réservations" value={stats.reservations || 0} color="green" />
               <StatCard icon={FaBook} label="Commandes" value={stats.commandes || 0} color="purple" />
+              <StatCard icon={FaDownload} label="Téléchargements" value={stats.downloads || 0} color="indigo" />
               <StatCard icon={FaGlobe} label="Visiteurs (Aujourd'hui)" value={stats.visitorsToday || 0} color="orange" />
             </div>
 
