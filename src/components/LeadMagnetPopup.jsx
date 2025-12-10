@@ -170,7 +170,7 @@ const LeadMagnetPopup = () => {
                         </div>
                         
                         <p className="text-xs text-gray-500 mt-4">
-                          ✅ Guide PDF de 25 pages • ✅ Checklist pratique • ✅ Ressources bonus
+                          ✅ Économie Numérique en Afrique • ✅ Focus Congo-Brazzaville • ✅ Analyse complète
                         </p>
                       </div>
                     ) : (

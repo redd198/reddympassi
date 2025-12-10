@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer'
 import dotenv from 'dotenv'
+import path from 'path'
 
 dotenv.config()
 
@@ -162,13 +163,21 @@ ${message}
 }
 
 // Envoyer le PDF du livre en pièce jointe
-export const sendBookPDF = async (commande, pdfPath) => {
+export const sendBookPDF = async (commande, customPdfPath = null) => {
   const whatsappGroupLink = process.env.WHATSAPP_GROUP_LINK || 'https://chat.whatsapp.com/VOTRE_LIEN'
+  
+  // Définir le livre par défaut et son chemin
+  const defaultBook = "Économie Numérique en Afrique – Focus Congo-Brazzaville"
+  const defaultPdfPath = path.join(process.cwd(), 'public', 'uploads', 'EconomieNumériqueenAfriqueFocusCongo-Brazzaville.pdf')
+  
+  // Utiliser le livre et le chemin fournis ou les valeurs par défaut
+  const bookTitle = commande.livre || defaultBook
+  const pdfPath = customPdfPath || defaultPdfPath
   
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: commande.email,
-    subject: `📚 Votre livre "${commande.livre}" est prêt !`,
+    subject: `📚 Votre livre "${bookTitle}" est prêt !`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #C41E3A 0%, #8B1429 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
@@ -176,7 +185,7 @@ export const sendBookPDF = async (commande, pdfPath) => {
         </div>
         
         <div style="background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; border-top: none;">
-          <h2 style="color: #C41E3A;">Votre livre "${commande.livre}" est prêt ! 📚</h2>
+          <h2 style="color: #C41E3A;">Votre livre "${bookTitle}" est prêt ! 📚</h2>
           <p style="font-size: 16px; line-height: 1.6; color: #333;">
             Vous trouverez votre livre en <strong>pièce jointe</strong> de cet email.
           </p>
@@ -207,7 +216,7 @@ export const sendBookPDF = async (commande, pdfPath) => {
     `,
     attachments: [
       {
-        filename: `${commande.livre}.pdf`,
+        filename: `${bookTitle}.pdf`,
         path: pdfPath
       }
     ]
