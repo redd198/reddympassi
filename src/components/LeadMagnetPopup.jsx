@@ -14,7 +14,9 @@ const LeadMagnetPopup = () => {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
-  const [countdown, setCountdown] = useState(8)
+  const [isError, setIsError] = useState(false)
+  const [message, setMessage] = useState('')
+  const [countdown, setCountdown] = useState(5)
 
   useEffect(() => {
     // Vérifier si le popup a déjà été affiché
@@ -44,12 +46,12 @@ const LeadMagnetPopup = () => {
 
   // Compte à rebours pour fermeture automatique
   useEffect(() => {
-    if (isSuccess && countdown > 0) {
+    if ((isSuccess || isError) && countdown > 0) {
       const timer = setTimeout(() => {
         setCountdown(countdown - 1)
       }, 1000)
       return () => clearTimeout(timer)
-    } else if (isSuccess && countdown === 0) {
+    } else if ((isSuccess || isError) && countdown === 0) {
       handleClose()
     }
   }, [isSuccess, countdown])
@@ -86,13 +88,29 @@ const LeadMagnetPopup = () => {
         }),
       })
 
+      const data = await response.json()
+      
       if (response.ok) {
         setIsSuccess(true)
-        // Démarrer le compte à rebours
-        setCountdown(8)
+        setIsError(false)
+        if (data.pdfSent) {
+          setMessage('🎉 Parfait ! Votre guide PDF a été envoyé par email. Vérifiez votre boîte de réception (et vos spams).')
+        } else {
+          setMessage('✅ Inscription réussie ! Vous recevrez bientôt votre guide par email.')
+        }
+        setCountdown(5)
+      } else {
+        setIsError(true)
+        setIsSuccess(false)
+        setMessage(data.error || '❌ Une erreur est survenue. Veuillez réessayer.')
+        setCountdown(5)
       }
     } catch (error) {
       console.error('Erreur lors de l\'envoi:', error)
+      setIsError(true)
+      setIsSuccess(false)
+      setMessage('❌ Erreur de connexion. Vérifiez votre connexion internet et réessayez.')
+      setCountdown(5)
     } finally {
       setIsSubmitting(false)
     }
@@ -265,26 +283,32 @@ const LeadMagnetPopup = () => {
                     )}
                   </>
                 ) : (
-                  // Étape 3: Succès
+                  // Étape 3: Succès ou Erreur
                   <div className="text-center py-4">
-                    {/* Animation de succès */}
+                    {/* Animation de succès ou erreur */}
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ type: "spring", duration: 0.5 }}
-                      className="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg"
+                      className={`w-20 h-20 ${isSuccess ? 'bg-gradient-to-br from-green-400 to-green-600' : 'bg-gradient-to-br from-red-400 to-red-600'} rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg`}
                     >
-                      <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
+                      {isSuccess ? (
+                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      ) : (
+                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      )}
                     </motion.div>
                     
-                    <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                      Fichier envoyé avec succès ! 🎉
+                    <h3 className={`text-2xl font-bold mb-2 ${isSuccess ? 'text-gray-800' : 'text-red-600'}`}>
+                      {isSuccess ? 'Guide envoyé ! 🎉' : 'Erreur d\'envoi ❌'}
                     </h3>
                     
-                    <p className="text-gray-600 mb-4">
-                      Votre guide <strong>"Économie Numérique en Afrique"</strong> sera envoyé dans les prochaines minutes via {selectedMethod === 'whatsapp' ? 'WhatsApp' : 'Email'}.
+                    <p className="text-gray-600 mb-4 text-sm leading-relaxed">
+                      {message}
                     </p>
                     
                     {/* Compte à rebours */}
@@ -301,40 +325,63 @@ const LeadMagnetPopup = () => {
                     
                     {/* CTA Buttons */}
                     <div className="space-y-3 mb-4">
-                      <a
-                        href="/livres"
-                        onClick={handleClose}
-                        className="block w-full py-3 bg-gradient-to-r from-reddy-blue to-reddy-red text-white font-semibold rounded-lg hover:shadow-lg transition-all duration-300"
-                      >
-                        📚 Découvrir nos livres
-                      </a>
+                      {isSuccess ? (
+                        <>
+                          <a
+                            href="/livres"
+                            onClick={handleClose}
+                            className="block w-full py-3 bg-gradient-to-r from-reddy-blue to-reddy-red text-white font-semibold rounded-lg hover:shadow-lg transition-all duration-300"
+                          >
+                            📚 Découvrir nos livres
+                          </a>
+                          
+                          <a
+                            href="/reserver"
+                            onClick={handleClose}
+                            className="block w-full py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-all duration-300"
+                          >
+                            💼 Réserver un coaching
+                          </a>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setIsError(false)
+                            setIsSuccess(false)
+                            setSelectedMethod('')
+                            setFormData({
+                              prenom: '',
+                              nom: '',
+                              contact: '',
+                              telephone: '',
+                              preference: ''
+                            })
+                          }}
+                          className="block w-full py-3 bg-gradient-to-r from-reddy-blue to-reddy-red text-white font-semibold rounded-lg hover:shadow-lg transition-all duration-300"
+                        >
+                          🔄 Réessayer
+                        </button>
+                      )}
                       
-                      <a
-                        href="/reserver"
-                        onClick={handleClose}
-                        className="block w-full py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-all duration-300"
-                      >
-                        💼 Réserver un coaching
-                      </a>
-                      
-                      <a
-                        href="/blog"
+                      <button
                         onClick={handleClose}
                         className="block w-full py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all duration-300"
                       >
-                        📰 Lire le blog
-                      </a>
+                        ✕ Fermer
+                      </button>
                     </div>
                     
-                    {/* Bonus info */}
-                    <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-200">
-                      <p className="text-sm text-gray-700 mb-2">
-                        <strong>🎁 Bonus exclusif :</strong>
-                      </p>
-                      <p className="text-xs text-gray-600">
-                        Vous recevrez également des conseils hebdomadaires sur l'économie numérique et les opportunités en Afrique !
-                      </p>
-                    </div>
+                    {/* Bonus info - seulement en cas de succès */}
+                    {isSuccess && (
+                      <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-200">
+                        <p className="text-sm text-gray-700 mb-2">
+                          <strong>🎁 Bonus exclusif :</strong>
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          Vous recevrez également des conseils hebdomadaires sur l'économie numérique et les opportunités en Afrique !
+                        </p>
+                      </div>
+                    )}
                     
                     {/* Bouton fermer manuel */}
                     <button
