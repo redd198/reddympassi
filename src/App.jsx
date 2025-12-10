@@ -10,6 +10,7 @@ import LandingLivreGratuit from './components/LandingLivreGratuit'
 import ProjectEvaluator from './components/ProjectEvaluator'
 import AffiliatePage from './components/AffiliatePage'
 import AdminPage from './components/AdminPage'
+import DownloadPage from './components/DownloadPage'
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
         <Route path="/calculateurs" element={<ProjectEvaluator />} />
         <Route path="/affiliation" element={<AffiliatePage />} />
         <Route path="/landing/livre-gratuit" element={<LandingLivreGratuit />} />
+        <Route path="/telecharger" element={<DownloadPage />} />
         <Route path="/admin" element={<AdminPage />} />
       </Routes>
     </Router>

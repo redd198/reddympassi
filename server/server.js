@@ -7,7 +7,7 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { getLocationFromIP, getClientIP } from './tracking.js'
-import { sendLeadNotification, sendReservationNotification, sendCommandeNotification, sendValidationEmail, sendBookPDF } from './email.js'
+import { sendLeadNotification, sendReservationNotification, sendCommandeNotification, sendValidationEmail, sendBookPDF, sendWhatsAppBookNotification } from './email.js'
 import { adaptQuery, extractRows, extractInsertId, dbType } from './db-helper.js'
 import { executeQuery, pool, isPostgres } from './db-query.js'
 
@@ -240,8 +240,13 @@ app.post('/api/leads', async (req, res) => {
         
         await executeQuery(downloadQuery, downloadParams)
         
-        // Envoyer le PDF
-        await sendBookPDF({ prenom, nom, email: email || whatsapp, whatsapp, preference, livre: produit })
+        // Envoyer le PDF selon la préférence
+        if (preference === 'email' && email) {
+          await sendBookPDF({ prenom, nom, email, whatsapp, preference, livre: produit })
+        } else if (preference === 'whatsapp' && whatsapp) {
+          // Pour WhatsApp, on envoie un message avec le lien de téléchargement
+          await sendWhatsAppBookNotification({ prenom, nom, whatsapp, livre: produit })
+        }
         console.log(`✅ PDF envoyé à ${prenom} ${nom} via ${preference}`)
       } catch (pdfError) {
         console.error('⚠️ Erreur envoi PDF:', pdfError.message)
@@ -261,6 +266,39 @@ app.post('/api/leads', async (req, res) => {
       return res.status(400).json({ error: 'Cet email est déjà enregistré' })
     }
     console.error('Erreur lors de l\'enregistrement du lead:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
+// Route pour les statistiques de téléchargement
+app.get('/api/download-stats', async (req, res) => {
+  try {
+    const { query, params } = adaptQuery('SELECT COUNT(*) as count FROM pdf_downloads', [])
+    const result = extractRows(await executeQuery(query, params))
+    res.json({ count: parseInt(result[0]?.count || 0) })
+  } catch (error) {
+    console.error('Erreur stats téléchargement:', error)
+    res.json({ count: 0 })
+  }
+})
+
+// Route pour tracker un téléchargement direct
+app.post('/api/track-download', async (req, res) => {
+  try {
+    const { livre, source } = req.body
+    const clientIP = getClientIP(req)
+    const userAgent = req.headers['user-agent'] || 'Unknown'
+    
+    const { query, params } = adaptQuery(
+      `INSERT INTO pdf_downloads (nom, livre, ip_address, user_agent, source, email_sent) 
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      ['Téléchargement direct', livre || 'Économie Numérique', clientIP, userAgent, source || 'direct', false]
+    )
+    
+    await executeQuery(query, params)
+    res.json({ success: true })
+  } catch (error) {
+    console.error('Erreur track téléchargement:', error)
     res.status(500).json({ error: 'Erreur serveur' })
   }
 })

@@ -163,6 +163,22 @@ ${message}
 }
 
 // Envoyer le PDF du livre en pièce jointe
+// Envoyer notification WhatsApp pour le livre
+export const sendWhatsAppBookNotification = async (commande) => {
+  const whatsappGroupLink = process.env.WHATSAPP_GROUP_LINK || 'https://chat.whatsapp.com/VOTRE_LIEN'
+  const bookTitle = commande.livre || "Économie Numérique en Afrique – Focus Congo-Brazzaville"
+  
+  // Pour l'instant, on log le message WhatsApp
+  // Dans une vraie implémentation, on utiliserait l'API WhatsApp Business
+  console.log(`📱 Message WhatsApp à envoyer à ${commande.whatsapp}:`)
+  console.log(`🎉 Bonjour ${commande.prenom} !`)
+  console.log(`Votre livre "${bookTitle}" est prêt !`)
+  console.log(`📚 Téléchargez-le ici: ${process.env.FRONTEND_URL || 'https://votre-site.com'}/telecharger`)
+  console.log(`🎁 Rejoignez notre communauté: ${whatsappGroupLink}`)
+  
+  return { success: true, method: 'whatsapp' }
+}
+
 export const sendBookPDF = async (commande, customPdfPath = null) => {
   const whatsappGroupLink = process.env.WHATSAPP_GROUP_LINK || 'https://chat.whatsapp.com/VOTRE_LIEN'
   

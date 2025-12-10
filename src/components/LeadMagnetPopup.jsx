@@ -94,9 +94,13 @@ const LeadMagnetPopup = () => {
         setIsSuccess(true)
         setIsError(false)
         if (data.pdfSent) {
-          setMessage('🎉 Parfait ! Votre guide PDF a été envoyé par email. Vérifiez votre boîte de réception (et vos spams).')
+          if (formData.preference === 'email') {
+            setMessage('🎉 Parfait ! Votre guide PDF a été envoyé par email. Vérifiez votre boîte de réception (et vos spams).')
+          } else {
+            setMessage('🎉 Parfait ! Votre inscription est confirmée. Vous recevrez bientôt le lien de téléchargement sur WhatsApp.')
+          }
         } else {
-          setMessage('✅ Inscription réussie ! Vous recevrez bientôt votre guide par email.')
+          setMessage('✅ Inscription réussie ! Vous recevrez bientôt votre guide.')
         }
         setCountdown(5)
       } else {
@@ -228,35 +232,39 @@ const LeadMagnetPopup = () => {
                           />
                         </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Votre numéro de téléphone
-                          </label>
-                          <input
-                            type="tel"
-                            name="telephone"
-                            value={formData.telephone}
-                            onChange={handleChange}
-                            required
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reddy-blue focus:border-transparent"
-                            placeholder="+242 XX XX XX XX"
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            {selectedMethod === 'whatsapp' ? 'Numéro WhatsApp' : 'Adresse Email'}
-                          </label>
-                          <input
-                            type={selectedMethod === 'whatsapp' ? 'tel' : 'email'}
-                            name="contact"
-                            value={formData.contact}
-                            onChange={handleChange}
-                            required
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reddy-blue focus:border-transparent"
-                            placeholder={selectedMethod === 'whatsapp' ? '+242 XX XX XX XX' : 'votre@email.com'}
-                          />
-                        </div>
+                        {selectedMethod === 'email' ? (
+                          // Mode Email : Nom + Email
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Votre adresse email
+                            </label>
+                            <input
+                              type="email"
+                              name="contact"
+                              value={formData.contact}
+                              onChange={handleChange}
+                              required
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reddy-blue focus:border-transparent"
+                              placeholder="votre@email.com"
+                            />
+                          </div>
+                        ) : (
+                          // Mode WhatsApp : Nom + WhatsApp
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Votre numéro WhatsApp
+                            </label>
+                            <input
+                              type="tel"
+                              name="contact"
+                              value={formData.contact}
+                              onChange={handleChange}
+                              required
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-reddy-blue focus:border-transparent"
+                              placeholder="+242 XX XX XX XX"
+                            />
+                          </div>
+                        )}
                         
                         <div className="flex gap-3">
                           <button
