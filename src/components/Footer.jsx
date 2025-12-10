@@ -44,7 +44,7 @@ const Footer = () => {
             <h3 className="text-xl font-bold mb-4">Suivez-nous</h3>
             <div className="flex gap-4">
               <a
-                href="https://linkedin.com"
+                href="https://www.linkedin.com/in/reddy-insider"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-reddy-blue hover:scale-110 transition-transform"
@@ -52,7 +52,7 @@ const Footer = () => {
                 <FaLinkedin size={20} />
               </a>
               <a
-                href="https://youtube.com"
+                href="https://www.youtube.com/@Reddy-Insider"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-reddy-red hover:scale-110 transition-transform"

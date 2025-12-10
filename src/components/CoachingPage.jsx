@@ -389,7 +389,7 @@ const CoachingPage = () => {
             
             <div className="flex gap-4">
               <a
-                href="https://linkedin.com"
+                href="https://www.linkedin.com/in/reddy-insider"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 bg-reddy-blue text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300"
@@ -398,7 +398,7 @@ const CoachingPage = () => {
               </a>
               
               <a
-                href="https://youtube.com"
+                href="https://www.youtube.com/@Reddy-Insider"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 bg-reddy-red text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform duration-300"
