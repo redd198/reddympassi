@@ -74,8 +74,42 @@ const LeadMagnetPopup = () => {
     console.log('📊 Données:', formData)
     console.log('🌐 URL API:', import.meta.env.VITE_API_URL || 'http://localhost:5000')
 
+    // MODE SIMULATION pour contourner les problèmes réseau
+    const SIMULATION_MODE = false
+    
+    if (SIMULATION_MODE) {
+      console.log('🎭 MODE SIMULATION ACTIVÉ')
+      console.log('📝 Données qui seraient envoyées:', {
+        prenom: formData.prenom,
+        nom: formData.nom,
+        telephone: formData.telephone,
+        email: formData.preference === 'email' ? formData.contact : '',
+        whatsapp: formData.preference === 'whatsapp' ? formData.contact : '',
+        preference: formData.preference,
+        source: 'livre-gratuit',
+        produit: 'Économie Numérique en Afrique – Focus Congo-Brazzaville'
+      })
+      
+      // Simuler un délai réseau
+      setTimeout(() => {
+        setIsSuccess(true)
+        setIsError(false)
+        if (formData.preference === 'email') {
+          setMessage('🎉 [SIMULATION] Parfait ! Votre guide PDF serait envoyé par email. Vérifiez votre boîte de réception (et vos spams).')
+        } else {
+          setMessage('🎉 [SIMULATION] Parfait ! Votre inscription est confirmée. Vous recevriez bientôt le lien de téléchargement sur WhatsApp.')
+        }
+        setCountdown(5)
+        setIsSubmitting(false)
+      }, 1500)
+      return
+    }
+
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/leads`, {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+      console.log('🔗 URL finale utilisée:', apiUrl)
+      
+      const response = await fetch(`${apiUrl}/api/leads`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
