@@ -65,6 +65,15 @@ const authenticateToken = (req, res, next) => {
   })
 }
 
+// Route racine
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'API Reddy Mpassi - Serveur fonctionnel', 
+    status: 'online',
+    endpoints: ['/api/health', '/api/leads', '/api/reservations', '/api/commandes']
+  })
+})
+
 // Route de test
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'API fonctionnelle' })
