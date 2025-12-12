@@ -441,6 +441,19 @@ app.get('/api/affiliation/stats/:code', async (req, res) => {
   }
 })
 
+// Route pour récupérer tous les leads (public)
+app.get('/api/leads', async (req, res) => {
+  try {
+    const { query, params } = adaptQuery('SELECT * FROM leads ORDER BY created_at DESC', [])
+    const result = await executeQuery(query, params)
+    const rows = extractRows(result)
+    res.json(rows)
+  } catch (error) {
+    console.error('Erreur lors de la récupération des leads:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
 // Route pour enregistrer un lead (livre gratuit, webinaire, etc.)
 app.post('/api/leads', async (req, res) => {
   try {
