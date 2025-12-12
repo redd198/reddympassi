@@ -261,12 +261,15 @@ app.post('/api/affiliation/register', async (req, res) => {
 
     // Générer un code d'affiliation unique
     const affiliateCode = `AFF${Date.now().toString().slice(-6)}${Math.random().toString(36).substr(2, 3).toUpperCase()}`
+    
+    // Créer le lien d'affiliation
+    const lienAffiliation = `https://reddympassi.site?ref=${affiliateCode}`
 
     const { query, params } = adaptQuery(
       `INSERT INTO affiliations 
-       (nom, prenom, email, whatsapp, mobile_money_operateur, mobile_money_numero, code_affiliation) 
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [nom, prenom, email, whatsapp, mobile_money_operateur || null, mobile_money_numero || null, affiliateCode]
+       (nom, prenom, email, whatsapp, mobile_money_operateur, mobile_money_numero, code_affiliation, lien_affiliation) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [nom, prenom, email, whatsapp, mobile_money_operateur || null, mobile_money_numero || null, affiliateCode, lienAffiliation]
     )
     
     const result = await executeQuery(query, params)
@@ -276,10 +279,164 @@ app.post('/api/affiliation/register', async (req, res) => {
       success: true,
       message: 'Inscription au programme d\'affiliation réussie',
       code: affiliateCode,
+      lien: lienAffiliation,
+      niveau: 'bronze',
+      coaching_heures: 1,
       id: insertId
     })
   } catch (error) {
     console.error('Erreur lors de l\'inscription à l\'affiliation:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
+// Route pour tracker un référral (clic sur lien d'affiliation)
+app.post('/api/affiliation/track', async (req, res) => {
+  try {
+    const { code_affiliation, page_visitee, user_agent } = req.body
+    const ip_visiteur = req.ip || req.connection.remoteAddress
+
+    if (!code_affiliation) {
+      return res.status(400).json({ error: 'Code d\'affiliation requis' })
+    }
+
+    // Vérifier que le code d'affiliation existe
+    const { query: checkQuery, params: checkParams } = adaptQuery(
+      'SELECT COUNT(*) as count FROM affiliations WHERE code_affiliation = ?',
+      [code_affiliation]
+    )
+    const checkResult = await executeQuery(checkQuery, checkParams)
+    const rows = extractRows(checkResult)
+    
+    if (rows[0].count === 0) {
+      return res.status(404).json({ error: 'Code d\'affiliation invalide' })
+    }
+
+    // Enregistrer le référral
+    const { query, params } = adaptQuery(
+      `INSERT INTO referrals 
+       (code_affiliation, ip_visiteur, user_agent, page_visitee) 
+       VALUES (?, ?, ?, ?)`,
+      [code_affiliation, ip_visiteur, user_agent || null, page_visitee || '/']
+    )
+    
+    await executeQuery(query, params)
+
+    res.json({ success: true, message: 'Référral tracké avec succès' })
+  } catch (error) {
+    console.error('Erreur lors du tracking du référral:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
+// Route pour enregistrer une conversion (commande, réservation, etc.)
+app.post('/api/affiliation/conversion', async (req, res) => {
+  try {
+    const { code_affiliation, type_conversion, conversion_id, montant } = req.body
+
+    if (!code_affiliation || !type_conversion) {
+      return res.status(400).json({ error: 'Code d\'affiliation et type de conversion requis' })
+    }
+
+    // Calculer la commission selon le niveau de l'affilié
+    const { query: affiliateQuery, params: affiliateParams } = adaptQuery(
+      'SELECT niveau FROM affiliations WHERE code_affiliation = ?',
+      [code_affiliation]
+    )
+    const affiliateResult = await executeQuery(affiliateQuery, affiliateParams)
+    const affiliateRows = extractRows(affiliateResult)
+    
+    if (affiliateRows.length === 0) {
+      return res.status(404).json({ error: 'Affilié non trouvé' })
+    }
+
+    const niveau = affiliateRows[0].niveau
+    
+    // Récupérer le taux de commission selon le niveau
+    const { query: niveauQuery, params: niveauParams } = adaptQuery(
+      'SELECT taux_commission FROM niveaux_affiliation WHERE niveau = ?',
+      [niveau]
+    )
+    const niveauResult = await executeQuery(niveauQuery, niveauParams)
+    const niveauRows = extractRows(niveauResult)
+    
+    const tauxCommission = niveauRows.length > 0 ? niveauRows[0].taux_commission : 10.00
+    const commission = montant ? (montant * tauxCommission / 100) : 0
+
+    // Enregistrer la conversion
+    const { query, params } = adaptQuery(
+      `INSERT INTO referrals 
+       (code_affiliation, type_conversion, conversion_id, commission_gagnee, statut) 
+       VALUES (?, ?, ?, ?, 'confirmed')`,
+      [code_affiliation, type_conversion, conversion_id || null, commission]
+    )
+    
+    await executeQuery(query, params)
+
+    res.json({ 
+      success: true, 
+      message: 'Conversion enregistrée avec succès',
+      commission: commission,
+      taux: tauxCommission
+    })
+  } catch (error) {
+    console.error('Erreur lors de l\'enregistrement de la conversion:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
+// Route pour récupérer les statistiques d'un affilié
+app.get('/api/affiliation/stats/:code', async (req, res) => {
+  try {
+    const { code } = req.params
+
+    // Récupérer les infos de l'affilié
+    const { query: affiliateQuery, params: affiliateParams } = adaptQuery(
+      'SELECT * FROM affiliations WHERE code_affiliation = ?',
+      [code]
+    )
+    const affiliateResult = await executeQuery(affiliateQuery, affiliateParams)
+    const affiliateRows = extractRows(affiliateResult)
+    
+    if (affiliateRows.length === 0) {
+      return res.status(404).json({ error: 'Affilié non trouvé' })
+    }
+
+    const affiliate = affiliateRows[0]
+
+    // Récupérer les statistiques des référrals
+    const { query: statsQuery, params: statsParams } = adaptQuery(
+      `SELECT 
+         COUNT(*) as total_clics,
+         COUNT(CASE WHEN type_conversion IS NOT NULL THEN 1 END) as conversions,
+         COALESCE(SUM(commission_gagnee), 0) as commissions_totales
+       FROM referrals WHERE code_affiliation = ?`,
+      [code]
+    )
+    const statsResult = await executeQuery(statsQuery, statsParams)
+    const statsRows = extractRows(statsResult)
+    
+    const stats = statsRows[0]
+
+    res.json({
+      success: true,
+      affiliate: {
+        nom: affiliate.nom,
+        prenom: affiliate.prenom,
+        niveau: affiliate.niveau,
+        code_affiliation: affiliate.code_affiliation,
+        lien_affiliation: affiliate.lien_affiliation,
+        coaching_heures_restantes: affiliate.coaching_heures_restantes
+      },
+      stats: {
+        total_clics: parseInt(stats.total_clics),
+        conversions: parseInt(stats.conversions),
+        commissions_totales: parseFloat(stats.commissions_totales),
+        taux_conversion: stats.total_clics > 0 ? (stats.conversions / stats.total_clics * 100).toFixed(2) : 0
+      }
+    })
+  } catch (error) {
+    console.error('Erreur lors de la récupération des statistiques:', error)
     res.status(500).json({ error: 'Erreur serveur' })
   }
 })

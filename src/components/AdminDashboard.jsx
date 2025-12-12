@@ -178,7 +178,7 @@ const AdminDashboard = ({ token, onLogout }) => {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
+          body: JSON.str"ingify({
             canal: validationCanal,
             message: validationMessage
           })

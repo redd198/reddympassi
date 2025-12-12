@@ -11,8 +11,11 @@ import ProjectEvaluator from './components/ProjectEvaluator'
 import AffiliatePage from './components/AffiliatePage'
 import AdminPage from './components/AdminPage'
 import DownloadPage from './components/DownloadPage'
+import useAffiliateTracking from './hooks/useAffiliateTracking'
 
 function App() {
+  // Activer le tracking d'affiliation sur toutes les pages
+  useAffiliateTracking()
   return (
     <Router>
       <Routes>

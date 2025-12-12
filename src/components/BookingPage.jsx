@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { FaLinkedin, FaYoutube, FaWhatsapp, FaCalendarAlt, FaLightbulb, FaCheckCircle } from 'react-icons/fa'
 import { useState } from 'react'
 import Navbar from './Navbar'
+import useAffiliateTracking from '../hooks/useAffiliateTracking'
 
 const BookingPage = () => {
   const [formData, setFormData] = useState({
