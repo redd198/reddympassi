@@ -25,6 +25,7 @@ function App() {
         <Route path="/coaching" element={<CoachingPage />} />
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/reserver" element={<BookingPage />} />
+        <Route path="/booking" element={<BookingPage />} />
         <Route path="/livres" element={<BooksPage />} />
         <Route path="/calculateurs" element={<ProjectEvaluator />} />
         <Route path="/affiliation" element={<AffiliatePage />} />

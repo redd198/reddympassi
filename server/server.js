@@ -826,6 +826,19 @@ app.get('/api/admin/newsletter', authenticateToken, async (req, res) => {
   }
 })
 
+// Récupérer toutes les affiliations
+app.get('/api/admin/affiliations', authenticateToken, async (req, res) => {
+  try {
+    const { query, params } = adaptQuery('SELECT * FROM affiliations ORDER BY created_at DESC', [])
+    const result = await executeQuery(query, params)
+    const rows = extractRows(result)
+    res.json(rows)
+  } catch (error) {
+    console.error('Erreur lors de la récupération des affiliations:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
 // Récupérer tous les téléchargements de PDF
 app.get('/api/admin/downloads', authenticateToken, async (req, res) => {
   try {

@@ -14,6 +14,7 @@ const AdminDashboard = ({ token, onLogout }) => {
   const [opportunites, setOpportunites] = useState([])
   const [videos, setVideos] = useState([])
   const [downloads, setDownloads] = useState([])
+  const [affiliations, setAffiliations] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(true) // Menu ouvert par défaut sur desktop
@@ -72,13 +73,14 @@ const AdminDashboard = ({ token, onLogout }) => {
       const headers = { 'Authorization': `Bearer ${token}` }
       const options = abortController ? { headers, signal: abortController.signal } : { headers }
       
-      const [statsRes, leadsRes, reservationsRes, commandesRes, visitorsRes, newsletterRes, blogRes, opportunitesRes, videosRes] = await Promise.all([
+      const [statsRes, leadsRes, reservationsRes, commandesRes, visitorsRes, newsletterRes, affiliationsRes, blogRes, opportunitesRes, videosRes] = await Promise.all([
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/stats`, options),
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/leads`, options),
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/reservations`, options),
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/commandes`, options),
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/visitors`, options),
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/newsletter`, options),
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/affiliations`, options),
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/blog/articles`, options),
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/emploi/opportunites`, options),
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/featured-videos`, options)
@@ -92,6 +94,7 @@ const AdminDashboard = ({ token, onLogout }) => {
       setCommandes(await commandesRes.json())
       setVisitors(await visitorsRes.json())
       setNewsletter(await newsletterRes.json())
+      setAffiliations(await affiliationsRes.json())
       setBlogArticles(await blogRes.json())
       setOpportunites(await opportunitesRes.json())
       setVideos(await videosRes.json())
@@ -521,6 +524,7 @@ const AdminDashboard = ({ token, onLogout }) => {
     { id: 'opportunites', label: 'Opportunités IT', icon: FaBriefcase },
     { id: 'videos', label: 'Vidéos', icon: FaPlay },
     { id: 'newsletter', label: 'Newsletter', icon: FaEnvelope },
+    { id: 'affiliations', label: 'Affiliations', icon: FaUsers },
     { id: 'visitors', label: 'Visiteurs', icon: FaGlobe }
   ]
 
@@ -1177,6 +1181,85 @@ const AdminDashboard = ({ token, onLogout }) => {
               }
             ]}
           />
+        )}
+
+        {/* Affiliations Tab */}
+        {activeTab === 'affiliations' && (
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div className="p-6 border-b">
+              <h2 className="text-2xl font-bold">🤝 Programme d'Affiliation</h2>
+              <p className="text-gray-600">{affiliations.length} affilié(s)</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">WhatsApp</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lien</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Commissions</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {affiliations.map((affiliation) => (
+                    <tr key={affiliation.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="font-medium text-gray-900">
+                          {affiliation.prenom} {affiliation.nom}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {affiliation.email}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {affiliation.whatsapp}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">
+                          {affiliation.code_affiliation}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <a 
+                          href={affiliation.lien_affiliation} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800 truncate block max-w-xs"
+                          title={affiliation.lien_affiliation}
+                        >
+                          {affiliation.lien_affiliation}
+                        </a>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                          affiliation.statut === 'actif' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {affiliation.statut}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {affiliation.commissions_gagnees || 0} €
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(affiliation.created_at).toLocaleDateString('fr-FR')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {affiliations.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  Aucune affiliation pour le moment
+                </div>
+              )}
+            </div>
+          </div>
         )}
 
         {/* Visitors Tab */}
