@@ -19,7 +19,7 @@ const DownloadPage = () => {
     
     try {
       // Enregistrer le téléchargement
-      await fetch('/api/track-download', {
+      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/track-download`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

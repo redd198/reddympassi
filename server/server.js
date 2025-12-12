@@ -204,6 +204,86 @@ app.post('/api/commandes', async (req, res) => {
   }
 })
 
+// Route pour enregistrer une évaluation de projet
+app.post('/api/evaluations', async (req, res) => {
+  try {
+    const { nom, email, whatsapp, preference, reponses } = req.body
+
+    // Validation
+    if (!nom || !preference || !reponses) {
+      return res.status(400).json({ error: 'Nom, préférence et réponses sont requis' })
+    }
+
+    const { query, params } = adaptQuery(
+      `INSERT INTO evaluations 
+       (nom, email, whatsapp, preference, reponses) 
+       VALUES (?, ?, ?, ?, ?)`,
+      [nom, email || null, whatsapp || null, preference, JSON.stringify(reponses)]
+    )
+    
+    const result = await executeQuery(query, params)
+    const insertId = extractInsertId(result)
+
+    res.status(201).json({
+      success: true,
+      message: 'Évaluation enregistrée avec succès',
+      id: insertId
+    })
+  } catch (error) {
+    console.error('Erreur lors de l\'enregistrement de l\'évaluation:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
+// Route pour l'inscription au programme d'affiliation
+app.post('/api/affiliation/register', async (req, res) => {
+  try {
+    const { nom, prenom, email, whatsapp, mobile_money_operateur, mobile_money_numero } = req.body
+
+    // Validation
+    if (!nom || !prenom || !email || !whatsapp) {
+      return res.status(400).json({ error: 'Tous les champs obligatoires doivent être remplis' })
+    }
+
+    // Vérifier si l'email existe déjà
+    const { query: checkQuery, params: checkParams } = adaptQuery(
+      'SELECT COUNT(*) as count FROM affiliations WHERE email = ?',
+      [email]
+    )
+    const checkResult = await executeQuery(checkQuery, checkParams)
+    const rows = extractRows(checkResult)
+    
+    if (rows[0].count > 0) {
+      return res.status(400).json({ 
+        error: 'Cet email est déjà inscrit au programme d\'affiliation' 
+      })
+    }
+
+    // Générer un code d'affiliation unique
+    const affiliateCode = `AFF${Date.now().toString().slice(-6)}${Math.random().toString(36).substr(2, 3).toUpperCase()}`
+
+    const { query, params } = adaptQuery(
+      `INSERT INTO affiliations 
+       (nom, prenom, email, whatsapp, mobile_money_operateur, mobile_money_numero, code_affiliation) 
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [nom, prenom, email, whatsapp, mobile_money_operateur || null, mobile_money_numero || null, affiliateCode]
+    )
+    
+    const result = await executeQuery(query, params)
+    const insertId = extractInsertId(result)
+
+    res.status(201).json({
+      success: true,
+      message: 'Inscription au programme d\'affiliation réussie',
+      code: affiliateCode,
+      id: insertId
+    })
+  } catch (error) {
+    console.error('Erreur lors de l\'inscription à l\'affiliation:', error)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
 // Route pour enregistrer un lead (livre gratuit, webinaire, etc.)
 app.post('/api/leads', async (req, res) => {
   try {
